@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Net.Http;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using Microsoft.Win32;
 using FUREQ.Workspace.Application;
@@ -25,6 +26,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly IWorkspaceSetupService _workspaceSetupService;
     private readonly IGitHubCollaborationService _collaborationService;
     private readonly IMarkdownDocumentService _markdownService;
+    private readonly IWorkspaceAssetService _assetService;
+    private readonly IWorkspaceToolService _toolService;
+    private readonly IDependencyGraphService _dependencyGraphService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -58,6 +62,16 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _markdownContent = "";
     private string _markdownSearchQuery = "";
     private string _markdownStatusText = "ローカルリポジトリを選択してMarkdownを読み込みます。";
+    private string _assetStatusText = "ローカルリポジトリを選択して資産一覧を読み込みます。";
+    private string _assetRequestTitle = "";
+    private string _assetRequestDetails = "";
+    private string _toolRootPath = "";
+    private string _toolStatusText = "DevelopmentTools checkoutを選択してManifestを確認してください。";
+    private WorkspaceTool? _selectedTool;
+    private string _dependencyStatusText = "ローカルリポジトリを選択して依存関係を読み込みます。";
+    private string _teamRequestTitle = "";
+    private string _teamRequestDetails = "";
+    private string _relatedIssueUrl = "";
 
     public MainWindowViewModel(
         IRepositoryDiscovery repositoryDiscovery,
@@ -69,7 +83,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         ISubmoduleService submoduleService,
         IWorkspaceSetupService workspaceSetupService,
         IGitHubCollaborationService collaborationService,
-        IMarkdownDocumentService markdownService)
+        IMarkdownDocumentService markdownService,
+        IWorkspaceAssetService assetService,
+        IWorkspaceToolService toolService,
+        IDependencyGraphService dependencyGraphService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
@@ -81,6 +98,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         _workspaceSetupService = workspaceSetupService;
         _collaborationService = collaborationService;
         _markdownService = markdownService;
+        _assetService = assetService;
+        _toolService = toolService;
+        _dependencyGraphService = dependencyGraphService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -113,6 +133,13 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         SearchMarkdownCommand = new AsyncRelayCommand(SearchMarkdownAsync);
         SaveMarkdownCommand = new AsyncRelayCommand(SaveMarkdownAsync);
         InsertMarkdownTemplateCommand = new RelayCommand(InsertMarkdownTemplate);
+        LoadAssetsCommand = new AsyncRelayCommand(LoadAssetsAsync);
+        CreateAssetRequestCommand = new AsyncRelayCommand(CreateAssetRequestAsync);
+        BrowseToolRootCommand = new RelayCommand(_ => BrowseToolRoot());
+        LoadToolsCommand = new AsyncRelayCommand(LoadToolsAsync);
+        RunToolCommand = new AsyncRelayCommand(RunToolAsync);
+        LoadDependencyGraphCommand = new AsyncRelayCommand(LoadDependencyGraphAsync);
+        CreateTeamRequestCommand = new AsyncRelayCommand(CreateTeamRequestAsync);
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
@@ -128,12 +155,18 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         ProjectItems = [];
         MarkdownDocuments = [];
         MarkdownSearchResults = [];
+        Assets = [];
+        Tools = [];
+        DeclaredDependencies = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
             new NavigationItem("repositories", "リポジトリ", _navigateCommand),
             new NavigationItem("setup", "ワークスペース", _navigateCommand),
             new NavigationItem("documents", "ドキュメント", _navigateCommand),
+            new NavigationItem("assets", "資産", _navigateCommand),
+            new NavigationItem("tools", "共通ツール", _navigateCommand),
+            new NavigationItem("dependencies", "依存・班間連携", _navigateCommand),
             new NavigationItem("settings", "設定", _navigateCommand)
         ];
     }
@@ -154,6 +187,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<GitHubProjectItem> ProjectItems { get; }
     public ObservableCollection<MarkdownDocument> MarkdownDocuments { get; }
     public ObservableCollection<MarkdownSearchResult> MarkdownSearchResults { get; }
+    public ObservableCollection<WorkspaceAsset> Assets { get; }
+    public ObservableCollection<WorkspaceTool> Tools { get; }
+    public ObservableCollection<DeclaredDependency> DeclaredDependencies { get; }
     public IReadOnlyList<WorkspaceSetupMode> SetupModes { get; }
     public IReadOnlyList<LfsDownloadMode> LfsModes { get; }
     public ICommand LoadRepositoriesCommand { get; }
@@ -187,6 +223,13 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand SearchMarkdownCommand { get; }
     public ICommand SaveMarkdownCommand { get; }
     public ICommand InsertMarkdownTemplateCommand { get; }
+    public ICommand LoadAssetsCommand { get; }
+    public ICommand CreateAssetRequestCommand { get; }
+    public ICommand BrowseToolRootCommand { get; }
+    public ICommand LoadToolsCommand { get; }
+    public ICommand RunToolCommand { get; }
+    public ICommand LoadDependencyGraphCommand { get; }
+    public ICommand CreateTeamRequestCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
@@ -215,6 +258,16 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public string MarkdownContent { get => _markdownContent; set { _markdownContent = value; OnPropertyChanged(); } }
     public string MarkdownSearchQuery { get => _markdownSearchQuery; set { _markdownSearchQuery = value; OnPropertyChanged(); } }
     public string MarkdownStatusText { get => _markdownStatusText; private set { _markdownStatusText = value; OnPropertyChanged(); } }
+    public string AssetStatusText { get => _assetStatusText; private set { _assetStatusText = value; OnPropertyChanged(); } }
+    public string AssetRequestTitle { get => _assetRequestTitle; set { _assetRequestTitle = value; OnPropertyChanged(); } }
+    public string AssetRequestDetails { get => _assetRequestDetails; set { _assetRequestDetails = value; OnPropertyChanged(); } }
+    public string ToolRootPath { get => _toolRootPath; set { _toolRootPath = value; OnPropertyChanged(); } }
+    public string ToolStatusText { get => _toolStatusText; private set { _toolStatusText = value; OnPropertyChanged(); } }
+    public WorkspaceTool? SelectedTool { get => _selectedTool; set { _selectedTool = value; OnPropertyChanged(); } }
+    public string DependencyStatusText { get => _dependencyStatusText; private set { _dependencyStatusText = value; OnPropertyChanged(); } }
+    public string TeamRequestTitle { get => _teamRequestTitle; set { _teamRequestTitle = value; OnPropertyChanged(); } }
+    public string TeamRequestDetails { get => _teamRequestDetails; set { _teamRequestDetails = value; OnPropertyChanged(); } }
+    public string RelatedIssueUrl { get => _relatedIssueUrl; set { _relatedIssueUrl = value; OnPropertyChanged(); } }
     public string CustomRepositoryNames { get => _customRepositoryNames; set { _customRepositoryNames = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
@@ -246,6 +299,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         "repositories" => "リポジトリ",
         "setup" => "ワークスペース",
         "documents" => "ドキュメント",
+        "assets" => "資産",
+        "tools" => "共通ツール",
+        "dependencies" => "依存関係・班間連携",
         "settings" => "設定",
         _ => "開発ワークスペース"
     };
@@ -255,6 +311,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         "repositories" => "FUREQ-DEVELOPのリポジトリを一覧し、ローカルの作業場所と状態を確認します。",
         "setup" => "班や職種ごとの作業プロファイルを管理し、指定フォルダー内のローカルリポジトリを確認します。",
         "documents" => "ローカルリポジトリのMarkdownを安全に閲覧・編集・検索します。",
+        "assets" => "ローカル画像とGit LFS pointerの状態を確認し、資産依頼をIssueで共有します。",
+        "tools" => "登録済みManifestを検証し、許可されたDevelopmentTools内の実行ファイルだけを起動します。",
+        "dependencies" => "Submoduleの固定SHAと宣言済みSDK/API互換性を確認し、他班への要求をIssueで共有します。",
         "settings" => "保存先、表示、同期方法など、この端末の設定を管理します。",
         _ => "開発環境の構築、共同開発、制作支援への入口です。"
     };
@@ -663,6 +722,155 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
             MarkdownStatusText = "テンプレートを編集欄へ挿入しました。保存先を確認してください。";
         }
         catch (ArgumentException exception) { MarkdownStatusText = exception.Message; }
+    }
+
+    private async Task LoadAssetsAsync()
+    {
+        if (!TryGetMarkdownRepository(out var path)) return;
+        try
+        {
+            var assets = await _assetService.ListAsync(path);
+            Assets.Clear();
+            foreach (var asset in assets) Assets.Add(asset);
+            var images = assets.Count(asset => asset.IsImage);
+            var pointers = assets.Count(asset => asset.IsGitLfsPointer);
+            var totalLfsBytes = assets.Where(asset => asset.LfsObjectSize.HasValue).Aggregate(0m, (total, asset) => total + asset.LfsObjectSize!.Value);
+            AssetStatusText = $"資産 {assets.Count}件 · 画像 {images}件 · LFS pointer {pointers}件 · LFS推定サイズ {totalLfsBytes:N0} bytes。画像/LFS本体は取得していません。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            AssetStatusText = exception.Message;
+        }
+    }
+
+    private async Task CreateAssetRequestAsync()
+    {
+        if (SelectedRepository is null)
+        {
+            AssetStatusText = "Issueを作成するGitHubリポジトリを選択してください。";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(AssetRequestTitle) || string.IsNullOrWhiteSpace(AssetRequestDetails))
+        {
+            AssetStatusText = "資産名と依頼内容を入力してください。";
+            return;
+        }
+        var body = $"## 資産依頼\n\n{AssetRequestDetails.Trim()}\n\n## 仕様・利用箇所\n\n## 受け入れ条件\n\n## 参照パス\n- \n";
+        if (MessageBox.Show($"{SelectedRepository.FullName}\n資産依頼: {AssetRequestTitle}\n\nGitHub Issueを作成します。内容とリポジトリを確認してください。続けますか？",
+                "資産依頼の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            var issue = await _collaborationService.CreateIssueAsync(SelectedRepository.FullName, AssetRequestTitle.Trim(), body);
+            AssetStatusText = $"資産依頼Issue #{issue.Number}を作成しました: {issue.Url}";
+            AssetRequestTitle = "";
+            AssetRequestDetails = "";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            AssetStatusText = exception.Message;
+        }
+    }
+
+    private void BrowseToolRoot()
+    {
+        var dialog = new OpenFolderDialog { Title = "DevelopmentTools checkoutを選択", Multiselect = false };
+        if (dialog.ShowDialog() == true) ToolRootPath = dialog.FolderName;
+    }
+
+    private async Task LoadToolsAsync()
+    {
+        try
+        {
+            var tools = await _toolService.DiscoverAsync(ToolRootPath);
+            Tools.Clear();
+            foreach (var tool in tools) Tools.Add(tool);
+            SelectedTool = Tools.FirstOrDefault();
+            ToolStatusText = tools.Count == 0
+                ? "有効な共通ツールManifestはありません。未登録のツールは表示・起動しません。"
+                : $"検証済みManifest: {tools.Count}件。各起動時に内容を確認します。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            Tools.Clear();
+            SelectedTool = null;
+            ToolStatusText = exception.Message;
+        }
+    }
+
+    private async Task RunToolAsync()
+    {
+        var tool = SelectedTool;
+        if (tool is null) return;
+        var arguments = tool.Arguments.Count == 0 ? "(なし)" : string.Join("\n", tool.Arguments);
+        if (MessageBox.Show($"{tool.DisplayName} {tool.Version}\n{tool.Description}\n\n実行ファイル: {tool.EntryPoint}\n引数:\n{arguments}\n\n副作用: {tool.SideEffectClassification}\n制限時間: {tool.TimeoutSeconds}秒\n\nこのツールを起動しますか？",
+                "共通ツールの起動確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            var result = await _toolService.RunAsync(ToolRootPath, tool);
+            ToolStatusText = $"{tool.DisplayName}: 終了コード {result.ExitCode} · {result.Duration.TotalSeconds:N1}秒";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or TimeoutException)
+        {
+            ToolStatusText = exception.Message;
+        }
+    }
+
+    private async Task LoadDependencyGraphAsync()
+    {
+        var selected = SelectedLocalRepository;
+        var path = selected?.Path;
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            DependencyStatusText = "先にローカルリポジトリを選択してください。";
+            return;
+        }
+        try
+        {
+            var graph = await _dependencyGraphService.LoadAsync(path);
+            Submodules.Clear();
+            foreach (var entry in graph.Submodules.Entries) Submodules.Add(entry);
+            DeclaredDependencies.Clear();
+            foreach (var entry in graph.DeclaredDependencies) DeclaredDependencies.Add(entry);
+            var updates = graph.Submodules.PinnedUpdatePreview.Count;
+            DependencyStatusText = $"{selected!.DirectoryName}: Submodule {graph.Submodules.Entries.Count}件（固定SHAとの差分 {updates}件）、宣言依存 {graph.DeclaredDependencies.Count}件。宣言依存はSDK/API互換性の情報で、Gitlinkとは別に表示します。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or JsonException)
+        {
+            DependencyStatusText = exception.Message;
+        }
+    }
+
+    private async Task CreateTeamRequestAsync()
+    {
+        if (SelectedRepository is null || string.IsNullOrWhiteSpace(TeamRequestTitle) || string.IsNullOrWhiteSpace(TeamRequestDetails))
+        {
+            DependencyStatusText = "Issue作成先リポジトリ、タイトル、依頼内容を入力してください。";
+            return;
+        }
+        if (!string.IsNullOrWhiteSpace(RelatedIssueUrl) &&
+            (!Uri.TryCreate(RelatedIssueUrl, UriKind.Absolute, out var related) || related.Scheme != Uri.UriSchemeHttps ||
+             !related.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) || !related.AbsolutePath.StartsWith("/FUREQ-DEVELOP/", StringComparison.OrdinalIgnoreCase) ||
+             !related.IsDefaultPort || !related.AbsolutePath.Contains("/issues/", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrEmpty(related.UserInfo) ||
+             !string.IsNullOrEmpty(related.Query) || !string.IsNullOrEmpty(related.Fragment)))
+        {
+            DependencyStatusText = "関連IssueにはFUREQ-DEVELOPのGitHub Issue URLを入力してください。";
+            return;
+        }
+        var body = $"## 開発班間の要求\n\n{TeamRequestDetails.Trim()}\n\n## SDK/API・互換性情報\n\n## 影響範囲\n\n## 関連Issue\n{(string.IsNullOrWhiteSpace(RelatedIssueUrl) ? "なし" : RelatedIssueUrl.Trim())}\n";
+        if (MessageBox.Show($"{SelectedRepository.FullName}\n{TeamRequestTitle}\n\nGitHub Issueを作成します。内容と対象を確認してください。続けますか？",
+                "開発班間Issueの確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            var issue = await _collaborationService.CreateIssueAsync(SelectedRepository.FullName, TeamRequestTitle.Trim(), body);
+            DependencyStatusText = $"Issue #{issue.Number}を作成しました: {issue.Url}";
+            TeamRequestTitle = "";
+            TeamRequestDetails = "";
+            RelatedIssueUrl = "";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            DependencyStatusText = exception.Message;
+        }
     }
 
     private async Task ScanLocalRepositoriesAsync()
