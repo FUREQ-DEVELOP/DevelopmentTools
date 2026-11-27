@@ -18,6 +18,7 @@
 - Markdown tests cover repository-contained paths, `.md` filtering, excluded directories, source preservation (including HTML-like text without execution), bounded search, atomic save and Git-visible diff.
 - Asset tests cover image discovery, excluded dependency folders, CRLF Git LFS pointer metadata, and confirm pointer files remain unchanged; tests never fetch LFS objects or create live Issues.
 - Tool-manifest tests cover strict JSON, supported schema/type, malformed and unknown fields, out-of-checkout paths, and approved-checkout validation; tests do not execute arbitrary tools.
+- Dependency tests cover the separation of declared SDK/API edges from Gitlinks and reject out-of-organization dependencies; cross-team Issue creation remains fake-HTTP-covered only and has no live write check.
 - API write timeout results in OutcomeUnknown and remote-state check before retry.
 
 ## CI

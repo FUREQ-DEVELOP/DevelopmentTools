@@ -62,6 +62,13 @@
 - 安全策: 任意shell/script非対応、unknown field/path escape/reparse point拒否、走査上限、ArgumentList、timeout/cancel、子プロセス環境の限定、出力破棄。
 - 検証: 正常/不正/unknown field/checkout外実行パスのローカルManifestテスト。実ツール起動は未実施。
 
+## D-012: Product dependencies and cross-team requests
+- 状態: PHASE 13実装中
+- 決定: Submodule graphはGitlinkの固定SHAを正として表示し、SDK/API等の宣言依存は`.fureq/dependencies.json`で別管理する。機能要求や互換性連絡は既存GitHub Issueへ送る。
+- 制限: 影響範囲表示は選択中repositoryまで。全Organizationの逆依存走査、Release検知、Gitlink更新は行わない。
+- 安全策: Manifestはサイズ/件数/スキーマ/Organization名/Release URLを検証し、実行や更新には使わない。Issue書き込みは毎回確認。
+- 検証: 宣言依存とGitlinkの分離、Organization外依存拒否の一時データテスト。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。
