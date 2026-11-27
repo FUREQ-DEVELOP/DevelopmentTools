@@ -26,5 +26,8 @@ Versioned JSON maps the 14 default repositories to relative paths. Modes compute
 ## Markdown documents
 Enumerate and search `.md` files beneath the selected local repository only, excluding `.git`, dependency/build directories and reparse points. Enforce 2 MiB per document, 50 MiB aggregate scan and 5,000 result/file limits. Render no HTML or executable embedded content; the initial UI displays Markdown source. Save validates a relative `.md` path, confirms the target, writes atomically, then exposes resulting Git status for diff review.
 
+## Dependency graph and cross-team requests
+Submodule edges come from committed gitlinks and are reported with their pinned/current SHA and initialization state. Declared product edges are read separately from the optional `.fureq/dependencies.json` version 1 manifest (maximum 64 KiB / 500 unique repositories); accepted kinds are `sdk`, `module`, `tool`, and `api`, with optional SDK version, API compatibility string, and FUREQ-DEVELOP GitHub Release URL. GitHub Issue requests are confirmed before creation and may include an optional related FUREQ-DEVELOP Issue URL. GitHub remains the record of truth; dependency declarations do not mutate Gitlinks or perform updates.
+
 ## File and path
 Target paths derive from approved mapping plus validated overrides. Reject path traversal, root escape, reserved Windows names and reparse-point escapes. Verify remote canonical URL/repository ID before reusing a clone.

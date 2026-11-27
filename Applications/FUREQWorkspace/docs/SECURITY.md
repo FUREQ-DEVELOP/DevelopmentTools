@@ -30,6 +30,8 @@ Markdown documents are read and written only inside the selected local Git repos
 
 Common tools are discovered only from strict version 1 manifests under `Tools/` in the selected DevelopmentTools checkout. Only in-checkout `.exe` entry points are supported; scripts, shell commands, unknown manifest fields, reparse-point paths, and out-of-checkout executables are rejected. Show executable, arguments, timeout and side-effect classification and require confirmation before each launch. Pass only system path/temp variables to the child and discard its output, with a bounded wait for inherited output handles. Current checkout has no tool manifests, so nothing can be launched yet.
 
+Dependency declarations are untrusted local repository data. Read only the fixed `.fureq/dependencies.json` path, enforce size/count limits and strict versioned fields, restrict repository names and Release URLs to FUREQ-DEVELOP, and never execute declarations. Related Issue URLs in requests are validated before inclusion; Issue creation still requires confirmation.
+
 ## Logs/database
 No tokens, authorization headers, credential output, complete private paths unless needed, or unnecessary source/issue content in logs. Local DB holds only settings, worktree inventory, cache and resumable setup state. Define bounded retention before Phase 02. Do not commit live DBs.
 
