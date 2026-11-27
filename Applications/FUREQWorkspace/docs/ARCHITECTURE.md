@@ -3,7 +3,7 @@
 ## 技術
 WPF / C# / `.NET 10 LTS` (`net10.0-windows`, x64), MVVM, Generic Host/DI, SQLite, `HttpClient` + `System.Text.Json`, Git/Git LFS CLI。Windows 11のVisual Studio 2026を基準にする。Visual Studio 2022は.NET 10 targetの公式構成ではない。
 
-候補package: CommunityToolkit.Mvvm 8.4.2, Microsoft.Extensions.Hosting 10.0.15, Microsoft.Data.Sqlite 10.0.15。すべてCPMで集中管理し、実装開始時に脆弱性/ライセンス/最新patchを再確認する。OctokitはREST/GraphQL要件を満たすか確かめるまで入れず、標準`HttpClient`を使う。Markdig/AvalonEditはPHASE 10まで保留。
+採用package: Microsoft.Extensions.Hosting 10.0.15, Microsoft.Data.Sqlite 10.0.15。VersionはCPMで集中管理する。MVVMは最小のWPF `INotifyPropertyChanged` / `ICommand`実装で始め、必要性を確認してから追加依存を検討する。OctokitはREST/GraphQL要件を満たすか確かめるまで入れず、標準`HttpClient`を使う。Markdig/AvalonEditはPHASE 10まで保留。
 
 ## ソリューション構成
 - `FUREQ.Workspace.App`: WPF entry point / composition root。
