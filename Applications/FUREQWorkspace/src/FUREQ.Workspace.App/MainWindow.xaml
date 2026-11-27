@@ -51,6 +51,12 @@
                                 <DataTrigger Binding="{Binding CurrentKey}" Value="assets">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
+                                <DataTrigger Binding="{Binding CurrentKey}" Value="tools">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding CurrentKey}" Value="dependencies">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
@@ -288,6 +294,86 @@
                                  AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" Padding="8" Margin="0,0,0,8" />
                         <Button Content="確認して資産依頼Issueを作成" Command="{Binding CreateAssetRequestCommand}"
                                 HorizontalAlignment="Left" Padding="14,8" />
+                    </StackPanel>
+                </Border>
+                <Border Background="White" BorderBrush="#D9E1E5" BorderThickness="1" CornerRadius="8" Padding="22">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentKey}" Value="tools">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="DevelopmentTools 共通ツール" FontSize="17" FontWeight="SemiBold" />
+                        <TextBlock Text="Tools配下の *.fureq-tool.json だけを検証します。現在ツールがない場合、一覧は空です。任意コマンドやスクリプトは起動しません。"
+                                   Foreground="#55636C" TextWrapping="Wrap" Margin="0,6,0,10" />
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="参照…" Command="{Binding BrowseToolRootCommand}" Margin="8,0,0,0" Padding="12,6" />
+                            <TextBox Text="{Binding ToolRootPath, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
+                        </DockPanel>
+                        <Button Content="Manifestを確認" Command="{Binding LoadToolsCommand}" HorizontalAlignment="Left" Padding="14,8" />
+                        <TextBlock Text="{Binding ToolStatusText}" Foreground="#55636C" TextWrapping="Wrap" Margin="0,8" />
+                        <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}" MinHeight="70" MaxHeight="180">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="4">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Foreground="#55636C" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Content="確認して起動" Command="{Binding RunToolCommand}"
+                                HorizontalAlignment="Left" Padding="14,8" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Background="White" BorderBrush="#D9E1E5" BorderThickness="1" CornerRadius="8" Padding="22">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentKey}" Value="dependencies">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="依存関係・SDK/API互換性" FontSize="17" FontWeight="SemiBold" />
+                        <TextBlock Text="選択中のローカルリポジトリから、Submoduleの固定コミットと .fureq/dependencies.json の宣言情報を別々に読み込みます。"
+                                   Foreground="#55636C" TextWrapping="Wrap" Margin="0,6,0,10" />
+                        <Button Content="依存グラフを更新" Command="{Binding LoadDependencyGraphCommand}" HorizontalAlignment="Left" Padding="14,8" />
+                        <TextBlock Text="{Binding DependencyStatusText}" Foreground="#55636C" TextWrapping="Wrap" Margin="0,8" />
+                        <TextBlock Text="Submodule（Gitlinkで固定された依存）" FontWeight="SemiBold" Margin="0,10,0,4" />
+                        <DataGrid ItemsSource="{Binding Submodules}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" MaxHeight="220">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="パス" Binding="{Binding RelativePath}" Width="1.5*" />
+                                <DataGridTextColumn Header="Repository" Binding="{Binding RepositoryFullName}" Width="2*" />
+                                <DataGridTextColumn Header="固定SHA" Binding="{Binding PinnedCommit}" Width="2*" />
+                                <DataGridTextColumn Header="現在SHA" Binding="{Binding CurrentCommit}" Width="2*" />
+                                <DataGridCheckBoxColumn Header="更新候補" Binding="{Binding NeedsPinnedUpdate}" Width="90" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="製品依存（宣言Manifest。Gitlinkと区別）" FontWeight="SemiBold" Margin="0,14,0,4" />
+                        <DataGrid ItemsSource="{Binding DeclaredDependencies}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" MaxHeight="160">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Repository" Binding="{Binding RepositoryFullName}" Width="2*" />
+                                <DataGridTextColumn Header="種別" Binding="{Binding DependencyType}" Width="80" />
+                                <DataGridTextColumn Header="SDK version" Binding="{Binding SdkVersion}" Width="120" />
+                                <DataGridTextColumn Header="API互換性" Binding="{Binding ApiCompatibility}" Width="*" />
+                                <DataGridTextColumn Header="Release" Binding="{Binding ReleaseUrl}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="開発班間の機能要求・変更連絡" FontSize="17" FontWeight="SemiBold" Margin="0,18,0,8" />
+                        <ComboBox ItemsSource="{Binding Repositories}" SelectedItem="{Binding SelectedRepository}" DisplayMemberPath="FullName" Padding="6" Margin="0,0,0,6" />
+                        <TextBox Text="{Binding TeamRequestTitle, UpdateSourceTrigger=PropertyChanged}" ToolTip="Issueタイトル" Padding="8" Margin="0,0,0,6" />
+                        <TextBox Text="{Binding TeamRequestDetails, UpdateSourceTrigger=PropertyChanged}" ToolTip="機能要求・SDK/API変更・影響範囲" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80" Padding="8" Margin="0,0,0,6" />
+                        <TextBox Text="{Binding RelatedIssueUrl, UpdateSourceTrigger=PropertyChanged}" ToolTip="関連するFUREQ-DEVELOP Issue URL（任意）" Padding="8" Margin="0,0,0,8" />
+                        <Button Content="確認して連携Issueを作成" Command="{Binding CreateTeamRequestCommand}" HorizontalAlignment="Left" Padding="14,8" />
                     </StackPanel>
                 </Border>
                 <Border Background="White" BorderBrush="#D9E1E5" BorderThickness="1" CornerRadius="8"

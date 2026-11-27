@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR #12 open)
+Current: PHASE 13 — DEPENDENCY GRAPH AND TEAM REQUESTS IMPLEMENTED (PR #14 open)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -45,6 +45,13 @@ Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR #12 open)
 - Asset request Issues use no assumed repository labels; creation requires explicit confirmation and the existing authenticated collaboration API.
 - PHASE 11 tests cover image discovery, dependency-folder exclusion, CRLF LFS pointer metadata, and that pointer files remain unchanged (no object download).
 - Current Release build succeeds with 0 warnings / 0 errors; all 43 tests pass.
+- PHASE 12 adds bounded strict Manifest discovery and confirmation-gated launch for `.exe` files contained in an approved DevelopmentTools checkout. Arbitrary scripts/shell commands and unknown fields are rejected; the current checkout has no manifests, so no tools are offered.
+- PHASE 12 Manifest tests cover valid discovery, malformed/unknown-field rejection, path escape rejection, and checkout validation.
+- Current Release build succeeds with 0 warnings / 0 errors; all 45 tests pass.
+- PHASE 13 adds a local view that separates committed Submodule Gitlinks from optional `.fureq/dependencies.json` SDK/API edges, plus confirmed cross-team GitHub Issue requests with optional related-Issue references.
+- Dependency declarations are read-only and cannot update Gitlinks. Impact currently means the selected local repository and its discovered dependency graph; a complete cross-repository downstream impact scan is not yet implemented. SDK/API versions come from declarations; live GitHub Release/update detection is not implemented.
+- PHASE 13 tests cover SDK/API manifest parsing and Gitlink separation, and reject out-of-organization dependencies.
+- Current Release build succeeds with 0 warnings / 0 errors; all 47 tests pass.
 - PHASE 09 adds a repeatable self-contained win-x64 single-file ZIP publish script and trial manifest; generated artifact is local and gitignored.
 - Published trial executable launched on this Windows account; WPF startup and local DB initialization were observed. This is not a clean-account/clean-machine trial, and live GitHub sign-in was not performed.
 - Current Release build succeeds with 0 warnings / 0 errors; all 35 tests pass.
@@ -56,9 +63,12 @@ Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR #12 open)
 - PHASE 09 PR #10 is open and awaiting review.
 - PHASE 10 PR #11 is open and awaiting review.
 - PHASE 11 PR #12 is open and awaiting review.
+- PHASE 12 PR #13 is open and awaiting review.
+- PHASE 13 PR #14 is open and awaiting review.
 - PHASE 09 trial ZIP is not a formal release; it has not been uploaded or distributed. Clean Windows user/account trial remains pending.
 - PHASE 10 markdown viewer/editor is local-only and has not been visually checked in a clean user profile; save/update behavior is covered by local filesystem and Git tests.
 - PHASE 11 asset inventory has not been visually checked in the WPF app; live Issue creation and LFS payload access were not exercised.
+- PHASE 12 tool execution is not exercised because the checkout has no registered tool; UI visual check remains pending.
 - PHASE 07 LFS estimates/selection and live 14-repository pilot remain open validation items.
 - PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
 - PHASE 07 Lightweight/Complete/Custom LFS modes are deliberately blocked pending payload-size estimation and path selection. Only Development mode (skip LFS) executes.
@@ -67,7 +77,7 @@ Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR #12 open)
 - PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
 
 ## Not started
-PHASE 12-17. Controlled tools, dependency graph and cross-team request features are not implemented yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 14-17. Actions/Release/notifications and update/hardening features are not implemented yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -77,11 +87,12 @@ PHASE 12-17. Controlled tools, dependency graph and cross-team request features 
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for PHASE 01-10 PRs #2-#11 in dependency order; merge protections must not be bypassed.
+1. Obtain independent reviews for PHASE 01-13 PRs #2-#14 in dependency order; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Review and merge PR #2-#11 in dependency order, without bypassing branch protections.
+3. Review and merge PR #2-#14 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
 5. Review/merge PHASE 08 PR #9 after creation; verify live read access, then use only dedicated/approved targets for any live write verification.
 6. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.
 7. Review/merge PHASE 09 PR #10, then run the ZIP in a clean Windows user profile before treating the MVP as trial-verified.
-8. Review/merge PHASE 10 PR #11, then review/merge the Phase 11 asset/LFS status PR.
+8. Review/merge PHASE 10 PR #11, then PR #12 (assets/LFS) and #13 (tools).
+9. Implement and review PHASE 13 dependency graph and cross-team requests.
