@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR pending)
+Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR #12 open)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -55,7 +55,7 @@ Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR pending)
 - Phase 08 PR #9 is open and awaiting review.
 - PHASE 09 PR #10 is open and awaiting review.
 - PHASE 10 PR #11 is open and awaiting review.
-- PHASE 11 PR is pending creation.
+- PHASE 11 PR #12 is open and awaiting review.
 - PHASE 09 trial ZIP is not a formal release; it has not been uploaded or distributed. Clean Windows user/account trial remains pending.
 - PHASE 10 markdown viewer/editor is local-only and has not been visually checked in a clean user profile; save/update behavior is covered by local filesystem and Git tests.
 - PHASE 11 asset inventory has not been visually checked in the WPF app; live Issue creation and LFS payload access were not exercised.
