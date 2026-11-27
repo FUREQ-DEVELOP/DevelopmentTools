@@ -31,7 +31,7 @@ Current: PHASE 06 — IMPLEMENTED (PR #7 preparation)
 - Current Release build succeeds with 0 warnings / 0 errors; all 24 tests pass.
 
 ## In progress
-- Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, and Phase 05 PR #6 are open and awaiting independent review.
+- Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, Phase 05 PR #6, and Phase 06 PR #7 are open and awaiting independent review.
 - PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
 - PHASE 03 Device Flow and Windows Credential Manager persistence are not yet verified against live user authorization.
 - PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
@@ -47,8 +47,8 @@ PHASE 07-17. Setup workflow, CI, and release artifacts do not exist yet. PHASE 0
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for Phase 01-04 PRs #2-#5; merge protections must not be bypassed.
+1. Obtain independent reviews for PHASE 01-06 PRs #2-#7 in dependency order; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Review and merge PR #2-#6 in dependency order, without bypassing branch protections.
+3. Review and merge PR #2-#7 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
 5. Review/merge PHASE 06 PR #7 after creation, then start PHASE 07 setup workflow.
