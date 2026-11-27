@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 10 — MARKDOWN SOURCE WORKFLOW IMPLEMENTED (PR #11 open)
+Current: PHASE 11 — ASSET AND LFS STATUS IMPLEMENTED (PR pending)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -40,6 +40,11 @@ Current: PHASE 10 — MARKDOWN SOURCE WORKFLOW IMPLEMENTED (PR #11 open)
 - PHASE 10 adds local Markdown listing, bounded full-text search, source editing, known safe templates and path-confirmed atomic saves; the app displays source text and does not render HTML or embedded content.
 - PHASE 10 tests cover `.md` filtering, skipped dependency folders, path traversal rejection, source preservation, bounded search and Git-visible diff.
 - Current Release build succeeds with 0 warnings / 0 errors; all 42 tests pass.
+- PHASE 11 adds a local image/LFS pointer inventory for the selected local Git repository and a confirmed GitHub Issue request form for assets.
+- Asset scanning skips dependency/build folders and reparse points, caps traversal at 2 GiB and results at 20,000, and reads only small files to identify LFS pointers. It never fetches image thumbnails or LFS payloads.
+- Asset request Issues use no assumed repository labels; creation requires explicit confirmation and the existing authenticated collaboration API.
+- PHASE 11 tests cover image discovery, dependency-folder exclusion, CRLF LFS pointer metadata, and that pointer files remain unchanged (no object download).
+- Current Release build succeeds with 0 warnings / 0 errors; all 43 tests pass.
 - PHASE 09 adds a repeatable self-contained win-x64 single-file ZIP publish script and trial manifest; generated artifact is local and gitignored.
 - Published trial executable launched on this Windows account; WPF startup and local DB initialization were observed. This is not a clean-account/clean-machine trial, and live GitHub sign-in was not performed.
 - Current Release build succeeds with 0 warnings / 0 errors; all 35 tests pass.
@@ -50,8 +55,10 @@ Current: PHASE 10 — MARKDOWN SOURCE WORKFLOW IMPLEMENTED (PR #11 open)
 - Phase 08 PR #9 is open and awaiting review.
 - PHASE 09 PR #10 is open and awaiting review.
 - PHASE 10 PR #11 is open and awaiting review.
+- PHASE 11 PR is pending creation.
 - PHASE 09 trial ZIP is not a formal release; it has not been uploaded or distributed. Clean Windows user/account trial remains pending.
 - PHASE 10 markdown viewer/editor is local-only and has not been visually checked in a clean user profile; save/update behavior is covered by local filesystem and Git tests.
+- PHASE 11 asset inventory has not been visually checked in the WPF app; live Issue creation and LFS payload access were not exercised.
 - PHASE 07 LFS estimates/selection and live 14-repository pilot remain open validation items.
 - PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
 - PHASE 07 Lightweight/Complete/Custom LFS modes are deliberately blocked pending payload-size estimation and path selection. Only Development mode (skip LFS) executes.
@@ -60,7 +67,7 @@ Current: PHASE 10 — MARKDOWN SOURCE WORKFLOW IMPLEMENTED (PR #11 open)
 - PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
 
 ## Not started
-PHASE 11-17. Asset support, controlled tools, dependency graph and cross-team request features are not implemented yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 12-17. Controlled tools, dependency graph and cross-team request features are not implemented yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -77,4 +84,4 @@ PHASE 11-17. Asset support, controlled tools, dependency graph and cross-team re
 5. Review/merge PHASE 08 PR #9 after creation; verify live read access, then use only dedicated/approved targets for any live write verification.
 6. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.
 7. Review/merge PHASE 09 PR #10, then run the ZIP in a clean Windows user profile before treating the MVP as trial-verified.
-8. Review/merge PHASE 10 PR #11, then continue PHASE 11 asset/LFS status.
+8. Review/merge PHASE 10 PR #11, then review/merge the Phase 11 asset/LFS status PR.

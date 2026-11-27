@@ -50,6 +50,12 @@
 - 制限: リポジトリ外/リンク先を拒否し、ファイル2 MiB、走査50 MiB、件数5,000件を上限とする。テンプレートはアプリ内固定文面のみ。
 - 検証: path validation、検索/保存、Git diffの一時リポジトリ試験。
 
+## D-010: Asset inventory and LFS
+- 状態: PHASE 11実装済み、PR作成/レビュー待ち
+- 決定: 資産一覧は選択中のローカルGit repositoryから画像ファイルとGit LFS pointerだけを列挙し、Issue依頼は既存の認証済みAPIを使って毎回確認する。
+- 安全策: `.git`等の除外、reparse pointを辿らない、走査2 GiB/20,000件の上限を設ける。LFS pointerのOID/sizeを読み取るだけで画像やLFS objectをダウンロードしない。Issueに未登録ラベルを仮定しない。
+- 検証: 一時Git repositoryで画像、依存フォルダ除外、CRLF pointer解析、pointer不変を検証。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。

@@ -25,6 +25,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly IWorkspaceSetupService _workspaceSetupService;
     private readonly IGitHubCollaborationService _collaborationService;
     private readonly IMarkdownDocumentService _markdownService;
+    private readonly IWorkspaceAssetService _assetService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -58,6 +59,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _markdownContent = "";
     private string _markdownSearchQuery = "";
     private string _markdownStatusText = "ローカルリポジトリを選択してMarkdownを読み込みます。";
+    private string _assetStatusText = "ローカルリポジトリを選択して資産一覧を読み込みます。";
+    private string _assetRequestTitle = "";
+    private string _assetRequestDetails = "";
 
     public MainWindowViewModel(
         IRepositoryDiscovery repositoryDiscovery,
@@ -69,7 +73,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         ISubmoduleService submoduleService,
         IWorkspaceSetupService workspaceSetupService,
         IGitHubCollaborationService collaborationService,
-        IMarkdownDocumentService markdownService)
+        IMarkdownDocumentService markdownService,
+        IWorkspaceAssetService assetService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
@@ -81,6 +86,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         _workspaceSetupService = workspaceSetupService;
         _collaborationService = collaborationService;
         _markdownService = markdownService;
+        _assetService = assetService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -113,6 +119,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         SearchMarkdownCommand = new AsyncRelayCommand(SearchMarkdownAsync);
         SaveMarkdownCommand = new AsyncRelayCommand(SaveMarkdownAsync);
         InsertMarkdownTemplateCommand = new RelayCommand(InsertMarkdownTemplate);
+        LoadAssetsCommand = new AsyncRelayCommand(LoadAssetsAsync);
+        CreateAssetRequestCommand = new AsyncRelayCommand(CreateAssetRequestAsync);
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
@@ -128,12 +136,14 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         ProjectItems = [];
         MarkdownDocuments = [];
         MarkdownSearchResults = [];
+        Assets = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
             new NavigationItem("repositories", "リポジトリ", _navigateCommand),
             new NavigationItem("setup", "ワークスペース", _navigateCommand),
             new NavigationItem("documents", "ドキュメント", _navigateCommand),
+            new NavigationItem("assets", "資産", _navigateCommand),
             new NavigationItem("settings", "設定", _navigateCommand)
         ];
     }
@@ -154,6 +164,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<GitHubProjectItem> ProjectItems { get; }
     public ObservableCollection<MarkdownDocument> MarkdownDocuments { get; }
     public ObservableCollection<MarkdownSearchResult> MarkdownSearchResults { get; }
+    public ObservableCollection<WorkspaceAsset> Assets { get; }
     public IReadOnlyList<WorkspaceSetupMode> SetupModes { get; }
     public IReadOnlyList<LfsDownloadMode> LfsModes { get; }
     public ICommand LoadRepositoriesCommand { get; }
@@ -187,6 +198,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand SearchMarkdownCommand { get; }
     public ICommand SaveMarkdownCommand { get; }
     public ICommand InsertMarkdownTemplateCommand { get; }
+    public ICommand LoadAssetsCommand { get; }
+    public ICommand CreateAssetRequestCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
@@ -215,6 +228,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public string MarkdownContent { get => _markdownContent; set { _markdownContent = value; OnPropertyChanged(); } }
     public string MarkdownSearchQuery { get => _markdownSearchQuery; set { _markdownSearchQuery = value; OnPropertyChanged(); } }
     public string MarkdownStatusText { get => _markdownStatusText; private set { _markdownStatusText = value; OnPropertyChanged(); } }
+    public string AssetStatusText { get => _assetStatusText; private set { _assetStatusText = value; OnPropertyChanged(); } }
+    public string AssetRequestTitle { get => _assetRequestTitle; set { _assetRequestTitle = value; OnPropertyChanged(); } }
+    public string AssetRequestDetails { get => _assetRequestDetails; set { _assetRequestDetails = value; OnPropertyChanged(); } }
     public string CustomRepositoryNames { get => _customRepositoryNames; set { _customRepositoryNames = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
@@ -246,6 +262,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         "repositories" => "リポジトリ",
         "setup" => "ワークスペース",
         "documents" => "ドキュメント",
+        "assets" => "資産",
         "settings" => "設定",
         _ => "開発ワークスペース"
     };
@@ -255,6 +272,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         "repositories" => "FUREQ-DEVELOPのリポジトリを一覧し、ローカルの作業場所と状態を確認します。",
         "setup" => "班や職種ごとの作業プロファイルを管理し、指定フォルダー内のローカルリポジトリを確認します。",
         "documents" => "ローカルリポジトリのMarkdownを安全に閲覧・編集・検索します。",
+        "assets" => "ローカル画像とGit LFS pointerの状態を確認し、資産依頼をIssueで共有します。",
         "settings" => "保存先、表示、同期方法など、この端末の設定を管理します。",
         _ => "開発環境の構築、共同開発、制作支援への入口です。"
     };
@@ -663,6 +681,53 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
             MarkdownStatusText = "テンプレートを編集欄へ挿入しました。保存先を確認してください。";
         }
         catch (ArgumentException exception) { MarkdownStatusText = exception.Message; }
+    }
+
+    private async Task LoadAssetsAsync()
+    {
+        if (!TryGetMarkdownRepository(out var path)) return;
+        try
+        {
+            var assets = await _assetService.ListAsync(path);
+            Assets.Clear();
+            foreach (var asset in assets) Assets.Add(asset);
+            var images = assets.Count(asset => asset.IsImage);
+            var pointers = assets.Count(asset => asset.IsGitLfsPointer);
+            var totalLfsBytes = assets.Where(asset => asset.LfsObjectSize.HasValue).Aggregate(0m, (total, asset) => total + asset.LfsObjectSize!.Value);
+            AssetStatusText = $"資産 {assets.Count}件 · 画像 {images}件 · LFS pointer {pointers}件 · LFS推定サイズ {totalLfsBytes:N0} bytes。画像/LFS本体は取得していません。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            AssetStatusText = exception.Message;
+        }
+    }
+
+    private async Task CreateAssetRequestAsync()
+    {
+        if (SelectedRepository is null)
+        {
+            AssetStatusText = "Issueを作成するGitHubリポジトリを選択してください。";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(AssetRequestTitle) || string.IsNullOrWhiteSpace(AssetRequestDetails))
+        {
+            AssetStatusText = "資産名と依頼内容を入力してください。";
+            return;
+        }
+        var body = $"## 資産依頼\n\n{AssetRequestDetails.Trim()}\n\n## 仕様・利用箇所\n\n## 受け入れ条件\n\n## 参照パス\n- \n";
+        if (MessageBox.Show($"{SelectedRepository.FullName}\n資産依頼: {AssetRequestTitle}\n\nGitHub Issueを作成します。内容とリポジトリを確認してください。続けますか？",
+                "資産依頼の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            var issue = await _collaborationService.CreateIssueAsync(SelectedRepository.FullName, AssetRequestTitle.Trim(), body);
+            AssetStatusText = $"資産依頼Issue #{issue.Number}を作成しました: {issue.Url}";
+            AssetRequestTitle = "";
+            AssetRequestDetails = "";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            AssetStatusText = exception.Message;
+        }
     }
 
     private async Task ScanLocalRepositoriesAsync()
