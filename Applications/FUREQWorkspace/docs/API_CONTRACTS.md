@@ -1,0 +1,20 @@
+# API contracts
+
+## GitHub
+- Public guest requests use HTTPS GitHub REST/GraphQL without auth where allowed. Authenticated requests use the approved GitHub App user token; never substitute another account or admin credential.
+- Repository discovery is paginated and keyed by immutable repository ID; collect name/full name, description, visibility, clone/default branch, archived/fork/disabled, updated time, topics and permissions where available. Treat missing/inaccessible fields distinctly.
+- Teams and membership require authentication and are displayed only for the signed-in user. GitHub permissions remain authoritative.
+- Issues, Projects and Pull Requests use typed request/response models and explicit read/write permissions. No Organization administration endpoints in MVP.
+- Use current supported REST API version header, GraphQL schema, ETags/conditional requests and rate-limit/Retry-After. Reconfirm version when implementing.
+
+## Application result
+Every async use case accepts CancellationToken and returns a typed `Result<T>` with `Success`, `Failure`, or `OutcomeUnknown`; include stable error code, safe user message, retryability and redacted diagnostic correlation ID. Do not retry a timed-out write unless idempotency/current remote state is checked.
+
+## Pagination/cache
+Paginate until next page is absent. Cache read-only metadata with ETag, fetched timestamp and expiry. Show stale/offline status. Never serve cached authorization as current permission.
+
+## Git subprocess
+One process runner uses ArgumentList, explicit cwd, async stdout/stderr, timeout, cancellation and exit code. Output parsers use porcelain/NUL formats where available. Command arguments and output are redacted before logging. Same worktree is serialized with a lock.
+
+## File and path
+Target paths derive from approved mapping plus validated overrides. Reject path traversal, root escape, reserved Windows names and reparse-point escapes. Verify remote canonical URL/repository ID before reusing a clone.
