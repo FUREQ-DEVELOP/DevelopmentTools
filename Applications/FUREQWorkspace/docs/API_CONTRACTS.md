@@ -6,6 +6,7 @@
 - Teams and membership require authentication and are displayed only for the signed-in user. GitHub permissions remain authoritative.
 - Issues, Projects and Pull Requests use typed request/response models and explicit read/write permissions. No Organization administration endpoints in MVP.
 - REST calls send `X-GitHub-Api-Version: 2026-03-10` and `Accept: application/vnd.github+json`; reconfirm the supported version when implementing future endpoints. GraphQL uses its current schema. Add ETags/conditional requests and rate-limit/Retry-After handling as the read surfaces expand.
+- PHASE 08 lists issues and pull requests via the REST endpoints; filter pull requests out of the REST issue list. Issue creation is an authenticated write. Organization Projects v2 and items use GraphQL; adding an Issue to a Project is a separately confirmed mutation.
 
 ## Application result
 Every async use case accepts CancellationToken and returns a typed `Result<T>` with `Success`, `Failure`, or `OutcomeUnknown`; include stable error code, safe user message, retryability and redacted diagnostic correlation ID. Do not retry a timed-out write unless idempotency/current remote state is checked.

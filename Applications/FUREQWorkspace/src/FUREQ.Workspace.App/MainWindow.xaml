@@ -209,7 +209,8 @@
                         <Button Content="リポジトリを更新" Command="{Binding LoadRepositoriesCommand}"
                                 HorizontalAlignment="Left" Padding="14,8" />
                         <TextBlock Text="{Binding RepositoryStatus}" Margin="0,12,0,8" Foreground="#55636C" />
-                        <DataGrid ItemsSource="{Binding Repositories}" AutoGenerateColumns="False" IsReadOnly="True"
+                        <DataGrid ItemsSource="{Binding Repositories}" SelectedItem="{Binding SelectedRepository}"
+                                  AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                                   MinHeight="120" MaxHeight="440">
                             <DataGrid.Columns>
@@ -229,6 +230,60 @@
                                 <DataGridTextColumn Header="識別子" Binding="{Binding Slug}" Width="*" />
                             </DataGrid.Columns>
                         </DataGrid>
+                        <TextBlock Text="Issues" FontSize="16" FontWeight="SemiBold" Margin="0,18,0,8" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Issueを読み込む" Command="{Binding LoadIssuesCommand}" Padding="14,8" />
+                            <Button Content="PRを読み込む" Command="{Binding LoadPullRequestsCommand}" Margin="8,0,0,0" Padding="14,8" />
+                        </StackPanel>
+                        <TextBox Text="{Binding IssueTitle, UpdateSourceTrigger=PropertyChanged}" ToolTip="Issueタイトル"
+                                 Padding="8" Margin="0,0,0,6" />
+                        <TextBox Text="{Binding IssueBody, UpdateSourceTrigger=PropertyChanged}" ToolTip="Issue本文"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" Padding="8" Margin="0,0,0,6" />
+                        <Button Content="GitHubにIssueを作成" Command="{Binding CreateIssueCommand}"
+                                HorizontalAlignment="Left" Padding="14,8" />
+                        <DataGrid ItemsSource="{Binding Issues}" SelectedItem="{Binding SelectedIssue}"
+                                  AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  MinHeight="80" MaxHeight="220" Margin="0,8,0,0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="60" />
+                                <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="2*" />
+                                <DataGridTextColumn Header="状態" Binding="{Binding State}" Width="80" />
+                                <DataGridTextColumn Header="作成者" Binding="{Binding Author}" Width="100" />
+                                <DataGridTextColumn Header="URL" Binding="{Binding Url}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <DataGrid ItemsSource="{Binding PullRequests}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  MinHeight="70" MaxHeight="180" Margin="0,8,0,0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="PR #" Binding="{Binding Number}" Width="60" />
+                                <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="2*" />
+                                <DataGridTextColumn Header="状態" Binding="{Binding State}" Width="80" />
+                                <DataGridTextColumn Header="作成者" Binding="{Binding Author}" Width="100" />
+                                <DataGridTextColumn Header="URL" Binding="{Binding Url}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="Organization Projects v2" FontSize="16" FontWeight="SemiBold" Margin="0,18,0,8" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Projectsを読み込む" Command="{Binding LoadProjectsCommand}" Padding="14,8" />
+                            <ComboBox ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}"
+                                      DisplayMemberPath="Title" Width="260" Margin="8,0,0,0" Padding="6" />
+                            <Button Content="項目を表示" Command="{Binding LoadProjectItemsCommand}" Margin="8,0,0,0" Padding="14,8" />
+                            <Button Content="選択Issueを追加" Command="{Binding AddIssueToProjectCommand}" Margin="8,0,0,0" Padding="14,8" />
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding ProjectItems}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  MinHeight="70" MaxHeight="200">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="種類" Binding="{Binding ContentType}" Width="120" />
+                                <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="2*" />
+                                <DataGridTextColumn Header="状態" Binding="{Binding State}" Width="80" />
+                                <DataGridTextColumn Header="URL" Binding="{Binding Url}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="{Binding CollaborationStatusText}" Foreground="#55636C"
+                                   TextWrapping="Wrap" Margin="0,8,0,0" />
                     </StackPanel>
                 </Border>
             </StackPanel>

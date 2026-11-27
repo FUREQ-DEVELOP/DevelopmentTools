@@ -39,6 +39,11 @@
 - LFS: Development modeだけ実行可能。Lightweight/Complete/Customは見積もり/対象選択の機能が揃うまでBlockする。
 - 検証: ローカルbare reposでclone/cancel/resumeを検証。全14個の組織公開repoへの実行はしない。
 
+## D-008: Issue/PR/Projects integration
+- 状態: PHASE 08実装済み、live API検証待ち
+- 決定: Issues/PRsはREST、Organization ProjectsはProjects v2 GraphQLで読む。Issue作成とProjectへの追加は別々に確認する。認証ユーザーのApp tokenとGitHub側の権限を尊重し、タイムアウトした書き込みは自動再試行しない。
+- 検証: fake HTTPで読み書きpayloadとtoken headerを確認。実Organizationへの書き込みは未実施。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。

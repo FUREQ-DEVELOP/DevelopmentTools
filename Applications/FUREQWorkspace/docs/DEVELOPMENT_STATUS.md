@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 07 — IMPLEMENTED WITH OPEN ITEMS (PR #8 open)
+Current: PHASE 08 — IMPLEMENTED, LIVE API VERIFICATION PENDING (PR #9 preparation)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -33,10 +33,15 @@ Current: PHASE 07 — IMPLEMENTED WITH OPEN ITEMS (PR #8 open)
 - Schema v3 persists plans and item-level status. Cancellation leaves completed targets intact; the latest saved plan can be reopened and unfinished items retried.
 - PHASE 07 local tests cover the 14-target map, dependency closure, local clone execution, cancellation/resume, and SQLite persistence.
 - Current Release build succeeds with 0 warnings / 0 errors; all 27 tests pass.
+- PHASE 08 adds authenticated repository Issue/PR listing, Issue creation, Organization Projects v2 and project-item reading, plus adding a selected Issue to a Project.
+- API writes require the app user token and explicit confirmation in the UI; Issue writes are not used in tests. Fake HTTP tests validate payloads, token headers, Projects GraphQL queries/mutations, malformed repository rejection, and timeout no-retry behavior.
+- Live Organization Issue/Project reads and writes have not been verified. Issue creation and Project membership updates were tested against fake HTTP only.
+- Current Release build succeeds with 0 warnings / 0 errors; all 35 tests pass.
 
 ## In progress
 - Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, Phase 05 PR #6, and Phase 06 PR #7 are open and awaiting independent review.
 - Phase 07 PR #8 is open and awaiting review.
+- PHASE 07 LFS estimates/selection and live 14-repository pilot remain open validation items.
 - PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
 - PHASE 07 Lightweight/Complete/Custom LFS modes are deliberately blocked pending payload-size estimation and path selection. Only Development mode (skip LFS) executes.
 - The live clean-clone check for all 14 public repositories and team pilot have not run; no organization repositories were cloned by this change.
@@ -44,7 +49,7 @@ Current: PHASE 07 — IMPLEMENTED WITH OPEN ITEMS (PR #8 open)
 - PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
 
 ## Not started
-PHASE 08-17. Issues/Projects workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 09-17. MVP integration, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -58,4 +63,5 @@ PHASE 08-17. Issues/Projects workflow, CI, and release artifacts do not exist ye
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
 3. Review and merge PR #2-#8 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
-5. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.
+5. Review/merge PHASE 08 PR #9 after creation; verify live read access, then use only dedicated/approved targets for any live write verification.
+6. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.

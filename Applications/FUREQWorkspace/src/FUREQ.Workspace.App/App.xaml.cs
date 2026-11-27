@@ -48,6 +48,7 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<IGitHubAccountDiscovery, GitHubAccountDiscovery>();
                 services.AddSingleton<IGitWriteIdentityValidator, GitHubGitWriteIdentityValidator>();
                 services.AddSingleton<IGitHubPullRequestService, GitHubPullRequestService>();
+                services.AddSingleton<IGitHubCollaborationService, GitHubCollaborationService>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })

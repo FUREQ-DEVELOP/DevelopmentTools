@@ -14,6 +14,7 @@
 - Submodule gitlink remains pinned unless user explicitly selects an update.
 - Nested `.gitmodules` paths and URLs are validated before recursive submodule initialization; initialization uses the committed gitlink SHA and update-preview inspection never changes the checkout.
 - Setup plan tests cover versioned 14-repository mapping, dependency closure, bounded local clone execution, staging promotion, cancellation, resume, and persisted per-item status. Live 14-repository clone/pilot remains a separate opt-in verification.
+- Collaboration API tests use fake HTTP only; assert token headers, typed payloads, issue-vs-PR filtering, Project v2 query/mutation, bounded pages, malformed target rejection and no retry on timed-out writes. No live production issue/project write is part of testing.
 - API write timeout results in OutcomeUnknown and remote-state check before retry.
 
 ## CI

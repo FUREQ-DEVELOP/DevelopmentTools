@@ -22,6 +22,8 @@ Submodule graph reads committed gitlinks and requires `.gitmodules` to be tracke
 
 Workspace setup writes only after an explicit plan confirmation. Clone into a plan-specific staging sibling, validate origin/default-branch commit, recursively validate pinned submodules, then move to the target only if it remains vacant. Use at most three parallel top-level clones. Never overwrite non-empty targets; retain successful repositories and per-item progress on cancellation. Development mode skips LFS downloads. Other LFS modes remain blocked until estimate and path-selection checks are implemented.
 
+Issues, pull requests, and Organization Projects are read with the signed-in App user token and remain constrained by GitHub's permission checks. Issue creation and adding an Issue to a Project each require explicit UI confirmation. Do not retry an API write after timeout; report uncertain outcome and ask the user to inspect GitHub first. Bound API response sizes and paginate with a fixed maximum.
+
 ## Logs/database
 No tokens, authorization headers, credential output, complete private paths unless needed, or unnecessary source/issue content in logs. Local DB holds only settings, worktree inventory, cache and resumable setup state. Define bounded retention before Phase 02. Do not commit live DBs.
 

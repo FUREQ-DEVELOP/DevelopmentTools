@@ -23,6 +23,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly IGitHubPullRequestService _pullRequestService;
     private readonly ISubmoduleService _submoduleService;
     private readonly IWorkspaceSetupService _workspaceSetupService;
+    private readonly IGitHubCollaborationService _collaborationService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -46,6 +47,12 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _setupStatusText = "公開リポジトリを読み込んで計画を作成してください。";
     private bool _isSetupRunning;
     private string _customRepositoryNames = "";
+    private RepositoryMetadata? _selectedRepository;
+    private GitHubProject? _selectedProject;
+    private string _issueTitle = "";
+    private string _issueBody = "";
+    private string _collaborationStatusText = "リポジトリを選んでIssue/PR/Projectsを読み込みます。";
+    private GitHubWorkItem? _selectedIssue;
 
     public MainWindowViewModel(
         IRepositoryDiscovery repositoryDiscovery,
@@ -55,7 +62,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         IGitRepositoryOperations gitOperations,
         IGitHubPullRequestService pullRequestService,
         ISubmoduleService submoduleService,
-        IWorkspaceSetupService workspaceSetupService)
+        IWorkspaceSetupService workspaceSetupService,
+        IGitHubCollaborationService collaborationService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
@@ -65,6 +73,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         _pullRequestService = pullRequestService;
         _submoduleService = submoduleService;
         _workspaceSetupService = workspaceSetupService;
+        _collaborationService = collaborationService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -86,6 +95,12 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         ResumeSetupPlanCommand = new AsyncRelayCommand(ResumeSetupPlanAsync);
         ExecuteSetupPlanCommand = new AsyncRelayCommand(ExecuteSetupPlanAsync);
         CancelSetupCommand = new RelayCommand(_ => _setupCancellation?.Cancel());
+        LoadIssuesCommand = new AsyncRelayCommand(LoadIssuesAsync);
+        CreateIssueCommand = new AsyncRelayCommand(CreateIssueAsync);
+        LoadPullRequestsCommand = new AsyncRelayCommand(LoadPullRequestsAsync);
+        LoadProjectsCommand = new AsyncRelayCommand(LoadProjectsAsync);
+        LoadProjectItemsCommand = new AsyncRelayCommand(LoadProjectItemsAsync);
+        AddIssueToProjectCommand = new AsyncRelayCommand(AddIssueToProjectAsync);
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
@@ -95,6 +110,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         SetupModes = Enum.GetValues<WorkspaceSetupMode>();
         LfsModes = Enum.GetValues<LfsDownloadMode>();
         SetupItems = [];
+        Issues = [];
+        PullRequests = [];
+        Projects = [];
+        ProjectItems = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
@@ -114,6 +133,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<string> GitChangedPaths { get; }
     public ObservableCollection<SubmoduleGraphEntry> Submodules { get; }
     public ObservableCollection<WorkspaceSetupItem> SetupItems { get; }
+    public ObservableCollection<GitHubWorkItem> Issues { get; }
+    public ObservableCollection<GitHubWorkItem> PullRequests { get; }
+    public ObservableCollection<GitHubProject> Projects { get; }
+    public ObservableCollection<GitHubProjectItem> ProjectItems { get; }
     public IReadOnlyList<WorkspaceSetupMode> SetupModes { get; }
     public IReadOnlyList<LfsDownloadMode> LfsModes { get; }
     public ICommand LoadRepositoriesCommand { get; }
@@ -136,6 +159,12 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand ResumeSetupPlanCommand { get; }
     public ICommand ExecuteSetupPlanCommand { get; }
     public ICommand CancelSetupCommand { get; }
+    public ICommand LoadIssuesCommand { get; }
+    public ICommand CreateIssueCommand { get; }
+    public ICommand LoadPullRequestsCommand { get; }
+    public ICommand LoadProjectsCommand { get; }
+    public ICommand LoadProjectItemsCommand { get; }
+    public ICommand AddIssueToProjectCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
@@ -154,6 +183,12 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public WorkspaceSetupPlan? SetupPlan { get => _setupPlan; private set { _setupPlan = value; OnPropertyChanged(); } }
     public string SetupStatusText { get => _setupStatusText; private set { _setupStatusText = value; OnPropertyChanged(); } }
     public bool IsSetupRunning { get => _isSetupRunning; private set { _isSetupRunning = value; OnPropertyChanged(); } }
+    public RepositoryMetadata? SelectedRepository { get => _selectedRepository; set { _selectedRepository = value; OnPropertyChanged(); } }
+    public GitHubWorkItem? SelectedIssue { get => _selectedIssue; set { _selectedIssue = value; OnPropertyChanged(); } }
+    public GitHubProject? SelectedProject { get => _selectedProject; set { _selectedProject = value; OnPropertyChanged(); } }
+    public string IssueTitle { get => _issueTitle; set { _issueTitle = value; OnPropertyChanged(); } }
+    public string IssueBody { get => _issueBody; set { _issueBody = value; OnPropertyChanged(); } }
+    public string CollaborationStatusText { get => _collaborationStatusText; private set { _collaborationStatusText = value; OnPropertyChanged(); } }
     public string CustomRepositoryNames { get => _customRepositoryNames; set { _customRepositoryNames = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
@@ -235,6 +270,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
             {
                 Repositories.Add(repository);
             }
+            SelectedRepository ??= Repositories.FirstOrDefault();
 
             RepositoryStatus = $"{Repositories.Count} 件のリポジトリを取得しました。";
         }
@@ -412,6 +448,111 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         SetupItems.Clear();
         foreach (var item in plan.Items) SetupItems.Add(item);
         SetupStatusText = $"{plan.Mode} · {plan.Items.Count}件 · Clone {plan.CloneItems.Count}件 · 再利用 {plan.Items.Count(item => item.State == SetupItemState.Reuse)}件 · ブロッカー {plan.Blockers.Count}件 · LFS {plan.LfsMode}";
+    }
+
+    private async Task LoadIssuesAsync()
+    {
+        if (SelectedRepository is null) { CollaborationStatusText = "先にリポジトリを選択してください。"; return; }
+        try
+        {
+            var items = await _collaborationService.GetIssuesAsync(SelectedRepository.FullName);
+            Issues.Clear();
+            foreach (var item in items) Issues.Add(item);
+            SelectedIssue = Issues.FirstOrDefault();
+            CollaborationStatusText = $"Issue {items.Count}件を取得しました。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            CollaborationStatusText = exception.Message;
+        }
+    }
+
+    private async Task CreateIssueAsync()
+    {
+        if (SelectedRepository is null) { CollaborationStatusText = "先にリポジトリを選択してください。"; return; }
+        if (MessageBox.Show($"{SelectedRepository.FullName}\nIssue: {IssueTitle}\n\nGitHubにIssueを作成します。作成後は取り消しではなくCloseが必要です。続けますか？",
+                "Issue作成の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            var issue = await _collaborationService.CreateIssueAsync(SelectedRepository.FullName, IssueTitle, IssueBody);
+            Issues.Insert(0, issue);
+            CollaborationStatusText = $"Issue #{issue.Number}を作成しました: {issue.Url}";
+            IssueTitle = "";
+            IssueBody = "";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            CollaborationStatusText = exception.Message;
+        }
+    }
+
+    private async Task LoadPullRequestsAsync()
+    {
+        if (SelectedRepository is null) { CollaborationStatusText = "先にリポジトリを選択してください。"; return; }
+        try
+        {
+            var items = await _collaborationService.GetPullRequestsAsync(SelectedRepository.FullName);
+            PullRequests.Clear();
+            foreach (var item in items) PullRequests.Add(item);
+            CollaborationStatusText = $"Pull Request {items.Count}件を取得しました。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            CollaborationStatusText = exception.Message;
+        }
+    }
+
+    private async Task LoadProjectsAsync()
+    {
+        try
+        {
+            var items = await _collaborationService.GetOrganizationProjectsAsync();
+            Projects.Clear();
+            foreach (var project in items) Projects.Add(project);
+            SelectedProject ??= Projects.FirstOrDefault();
+            CollaborationStatusText = $"Organization Projects {items.Count}件を取得しました。";
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            CollaborationStatusText = exception.Message;
+        }
+    }
+
+    private async Task LoadProjectItemsAsync()
+    {
+        if (SelectedProject is null) { CollaborationStatusText = "先にProjectを選択してください。"; return; }
+        try
+        {
+            var items = await _collaborationService.GetProjectItemsAsync(SelectedProject.NodeId);
+            ProjectItems.Clear();
+            foreach (var item in items) ProjectItems.Add(item);
+            CollaborationStatusText = $"{SelectedProject.Title}: {items.Count}件を取得しました。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            CollaborationStatusText = exception.Message;
+        }
+    }
+
+    private async Task AddIssueToProjectAsync()
+    {
+        if (SelectedProject is null || SelectedIssue is null)
+        {
+            CollaborationStatusText = "先にProjectとIssueを選択してください。";
+            return;
+        }
+        if (MessageBox.Show($"Project: {SelectedProject.Title}\nIssue #{SelectedIssue.Number}: {SelectedIssue.Title}\n\nGitHub Projectへ追加します。続けますか？",
+                "Project変更の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            await _collaborationService.AddIssueToProjectAsync(SelectedProject.NodeId, SelectedIssue.NodeId);
+            CollaborationStatusText = $"Issue #{SelectedIssue.Number}をProject「{SelectedProject.Title}」へ追加しました。";
+            await LoadProjectItemsAsync();
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
+        {
+            CollaborationStatusText = exception.Message;
+        }
     }
 
     private async Task ScanLocalRepositoriesAsync()
