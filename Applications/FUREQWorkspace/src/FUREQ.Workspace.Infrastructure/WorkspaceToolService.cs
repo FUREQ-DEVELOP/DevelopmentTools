@@ -72,8 +72,9 @@ public sealed partial class WorkspaceToolService : IWorkspaceToolService
         using var process = new Process { StartInfo = start };
         var watch = Stopwatch.StartNew();
         if (!process.Start()) throw new InvalidOperationException("ツールを起動できませんでした。");
-        var stdout = DrainAsync(process.StandardOutput);
-        var stderr = DrainAsync(process.StandardError);
+        using var drainCancellation = new CancellationTokenSource();
+        var stdout = DrainAsync(process.StandardOutput, drainCancellation.Token);
+        var stderr = DrainAsync(process.StandardError, drainCancellation.Token);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(tool.TimeoutSeconds));
         try { await process.WaitForExitAsync(timeout.Token); }
@@ -81,21 +82,25 @@ public sealed partial class WorkspaceToolService : IWorkspaceToolService
         {
             try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
             await process.WaitForExitAsync(CancellationToken.None);
-            await Task.WhenAll(stdout, stderr);
+            drainCancellation.Cancel();
+            try { await Task.WhenAll(stdout, stderr); } catch (OperationCanceledException) { }
             cancellationToken.ThrowIfCancellationRequested();
             throw new TimeoutException("共通ツールが制限時間を超えたため終了しました。");
         }
-        await Task.WhenAll(stdout, stderr);
+        drainCancellation.CancelAfter(TimeSpan.FromSeconds(2));
+        try { await Task.WhenAll(stdout, stderr); }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { }
+        cancellationToken.ThrowIfCancellationRequested();
         watch.Stop();
         return new WorkspaceToolRunResult(tool.ToolId, process.ExitCode, watch.Elapsed);
     }
 
-    private static async Task DrainAsync(StreamReader reader)
+    private static async Task DrainAsync(StreamReader reader, CancellationToken cancellationToken)
     {
         var buffer = new char[4096];
         while (true)
         {
-            var read = await reader.ReadAsync(buffer.AsMemory());
+            var read = await reader.ReadAsync(buffer.AsMemory(), cancellationToken);
             if (read == 0) return;
             Array.Clear(buffer, 0, read);
         }
