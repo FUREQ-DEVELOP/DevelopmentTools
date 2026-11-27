@@ -28,6 +28,7 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<WorkspaceDatabase>();
                 services.AddSingleton<DatabaseInitializer>();
                 services.AddSingleton<IAppSettingsRepository, SqliteAppSettingsRepository>();
+                services.AddSingleton<IWorkspaceInventory, SqliteWorkspaceInventory>();
                 var githubClient = new HttpClient
                 {
                     BaseAddress = new Uri("https://api.github.com/"),
@@ -48,7 +49,9 @@ public partial class App : System.Windows.Application
         {
             await _host.StartAsync();
             await _host.Services.GetRequiredService<DatabaseInitializer>().InitializeAsync();
-            MainWindow = _host.Services.GetRequiredService<MainWindow>();
+            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+            await ((MainWindowViewModel)mainWindow.DataContext).InitializeAsync();
+            MainWindow = mainWindow;
             MainWindow.Show();
         }
         catch (Exception exception)

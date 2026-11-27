@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 03 — IN PROGRESS (Device Flow and discovery implemented; live sign-in not yet verified)
+Current: PHASE 04 — IN PROGRESS (workspace profiles and local inventory implemented)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -17,13 +17,18 @@ Current: PHASE 03 — IN PROGRESS (Device Flow and discovery implemented; live s
 - PHASE 03 pagination test passes using a fake HTTP handler; a real unauthenticated request returned 15 public organization repositories.
 - PHASE 03 Device Flow, token refresh, local sign-out, Windows Credential Manager storage, and authenticated user/team/repository discovery implemented.
 - PHASE 03 fake-handler tests cover token storage boundary, cancellation, slow-down polling, pagination, and Bearer header use.
+- PHASE 04 schema v2 adds workspace profiles and local repository inventory; duplicate canonical paths are rejected and re-scanning is idempotent.
+- PHASE 04 inventory examines only immediate child folders, skips reparse points, and checks only for a `.git` marker without reading config or running Git.
+- PHASE 04 tests cover v1-to-v2 data-preserving migration, duplicate profile paths, immediate-only discovery, repeat scans, and missing-folder status.
+- Current Release build succeeds with 0 warnings / 0 errors; all 10 tests pass.
 
 ## In progress
-- Phase 01 PR #2 and Phase 02 PR #3 are open and awaiting independent review.
-- Verify PHASE 03 Device Flow in the live app with the user; verify the authenticated repository and team results.
+- Phase 01 PR #2, Phase 02 PR #3, and Phase 03 PR #4 are open and awaiting independent review.
+- PHASE 03 Device Flow and Windows Credential Manager persistence are not yet verified against live user authorization.
+- PHASE 04 changes are local on `feature/fureq-workspace-phase-04`; no PR has been submitted yet.
 
 ## Not started
-PHASE 04-17. Workspace profiles, Git operations, setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 05-17. Git operations, setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -33,5 +38,6 @@ PHASE 04-17. Workspace profiles, Git operations, setup workflow, CI, and release
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for Phase 01 PR #2 and Phase 02 PR #3; merge protections must not be bypassed.
+1. Obtain independent reviews for Phase 01-03 PRs #2-#4; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
+3. Submit the Phase 04 profile/inventory PR.

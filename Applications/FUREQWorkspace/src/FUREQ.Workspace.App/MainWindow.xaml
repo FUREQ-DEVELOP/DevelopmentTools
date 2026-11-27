@@ -26,7 +26,7 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock DockPanel.Dock="Bottom" Text="Public workspace · Guest mode" Foreground="#A9BFBC"
+                <TextBlock DockPanel.Dock="Bottom" Text="FUREQ-DEVELOP · GitHub API" Foreground="#A9BFBC"
                            FontSize="11" Margin="4,24,4,4" TextWrapping="Wrap" />
             </DockPanel>
         </Border>
@@ -42,6 +42,9 @@
                                 <DataTrigger Binding="{Binding CurrentKey}" Value="repositories">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
+                                <DataTrigger Binding="{Binding CurrentKey}" Value="setup">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
@@ -50,6 +53,51 @@
                         <TextBlock Text="この領域に機能を追加します。現在はアプリの基盤を構築しています。"
                                    FontSize="15" TextWrapping="Wrap" Margin="0,8,0,0" />
                         <TextBlock Text="{Binding DatabaseStatus}" FontSize="12" Foreground="#65747D" Margin="0,18,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Background="White" BorderBrush="#D9E1E5" BorderThickness="1" CornerRadius="8" Padding="22">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentKey}" Value="setup">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="プロファイルを作成" FontSize="17" FontWeight="SemiBold" />
+                        <TextBlock Text="保存先の設定だけを記録します。フォルダーの作成やファイル変更は行いません。"
+                                   Foreground="#55636C" TextWrapping="Wrap" Margin="0,6,0,14" />
+                        <TextBlock Text="名前" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding WorkspaceName, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,10" Padding="8" />
+                        <TextBlock Text="班・職種" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding WorkspaceRole, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,10" Padding="8" />
+                        <TextBlock Text="保存先フォルダー" FontWeight="SemiBold" />
+                        <DockPanel Margin="0,4,0,12">
+                            <Button DockPanel.Dock="Right" Content="参照…" Command="{Binding BrowseWorkspaceRootCommand}"
+                                    Margin="8,0,0,0" Padding="12,6" />
+                            <TextBox Text="{Binding WorkspaceRootPath, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
+                        </DockPanel>
+                        <Button Content="プロファイルを保存" Command="{Binding CreateWorkspaceProfileCommand}"
+                                HorizontalAlignment="Left" Padding="14,8" />
+                        <TextBlock Text="登録済みプロファイル" FontSize="17" FontWeight="SemiBold" Margin="0,18,0,6" />
+                        <ListBox ItemsSource="{Binding WorkspaceProfiles}" SelectedItem="{Binding SelectedWorkspaceProfile}"
+                                 DisplayMemberPath="Name" MinHeight="60" MaxHeight="150" />
+                        <Button Content="ローカルリポジトリを確認" Command="{Binding ScanLocalRepositoriesCommand}"
+                                HorizontalAlignment="Left" Padding="14,8" Margin="0,10,0,0" />
+                        <TextBlock Text="{Binding RepositoryStatus}" Foreground="#55636C" Margin="0,8,0,8" />
+                        <DataGrid ItemsSource="{Binding LocalRepositories}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  MinHeight="100" MaxHeight="280">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="フォルダー" Binding="{Binding DirectoryName}" Width="*" />
+                                <DataGridCheckBoxColumn Header="現在あり" Binding="{Binding IsPresent}" Width="80" />
+                                <DataGridTextColumn Header="パス" Binding="{Binding Path}" Width="3*" />
+                                <DataGridTextColumn Header="確認日時" Binding="{Binding LastScannedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="140" />
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </StackPanel>
                 </Border>
                 <Border Background="White" BorderBrush="#D9E1E5" BorderThickness="1" CornerRadius="8"
@@ -73,7 +121,7 @@
                             <Button Content="認証をキャンセル" Command="{Binding CancelSignInCommand}"
                                     Padding="14,8" Margin="8,0,0,0" />
                         </StackPanel>
-                        <Button Content="公開リポジトリを更新" Command="{Binding LoadRepositoriesCommand}"
+                        <Button Content="リポジトリを更新" Command="{Binding LoadRepositoriesCommand}"
                                 HorizontalAlignment="Left" Padding="14,8" />
                         <TextBlock Text="{Binding RepositoryStatus}" Margin="0,12,0,8" Foreground="#55636C" />
                         <DataGrid ItemsSource="{Binding Repositories}" AutoGenerateColumns="False" IsReadOnly="True"

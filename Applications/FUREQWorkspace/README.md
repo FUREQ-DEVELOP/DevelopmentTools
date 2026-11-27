@@ -4,7 +4,7 @@ FUREQ-DEVELOP向けのWindows共同開発ポータルです。GitHub、Git、Sub
 
 開発は [要件](docs/REQUIREMENTS.md)、[設計](docs/ARCHITECTURE.md)、[進捗](docs/DEVELOPMENT_STATUS.md)から始めます。
 
-PHASE 03を実装中です。ゲストモードでは公開リポジトリを一覧できます。GitHub App Device Flowでサインインすると、ユーザー権限とApp権限の両方で見えるリポジトリとFUREQ-DEVELOPチームを表示します。Access/Refresh TokenはWindows資格情報マネージャーに保存し、SQLiteには保存しません。実機でのDevice Flow確認は未実施です。
+PHASE 04を実装中です。班・職種ごとのプロファイルを保存し、指定フォルダー直下の`.git`マーカーを持つディレクトリを読み取り専用で棚卸しします。PHASE 03のゲスト公開リポジトリ一覧とGitHub App Device Flowも実装済みですが、実機サインインは未確認です。Access/Refresh TokenはWindows資格情報マネージャーに保存し、SQLiteには保存しません。
 
 ## 開発
 
