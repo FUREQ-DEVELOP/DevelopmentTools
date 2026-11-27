@@ -21,6 +21,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly IWorkspaceInventory _workspaceInventory;
     private readonly IGitRepositoryOperations _gitOperations;
     private readonly IGitHubPullRequestService _pullRequestService;
+    private readonly ISubmoduleService _submoduleService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -44,7 +45,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         IGitHubAccountDiscovery accountDiscovery,
         IWorkspaceInventory workspaceInventory,
         IGitRepositoryOperations gitOperations,
-        IGitHubPullRequestService pullRequestService)
+        IGitHubPullRequestService pullRequestService,
+        ISubmoduleService submoduleService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
@@ -52,6 +54,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         _workspaceInventory = workspaceInventory;
         _gitOperations = gitOperations;
         _pullRequestService = pullRequestService;
+        _submoduleService = submoduleService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -67,11 +70,14 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         CommitStagedChangesCommand = new AsyncRelayCommand(CommitStagedChangesAsync);
         PushCommand = new AsyncRelayCommand(PushAsync);
         CreatePullRequestCommand = new AsyncRelayCommand(CreatePullRequestAsync);
+        LoadSubmodulesCommand = new AsyncRelayCommand(LoadSubmodulesAsync);
+        InitializeSubmodulesCommand = new AsyncRelayCommand(InitializeSubmodulesAsync);
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
         LocalRepositories = [];
         GitChangedPaths = [];
+        Submodules = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
@@ -89,6 +95,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<WorkspaceProfile> WorkspaceProfiles { get; }
     public ObservableCollection<LocalRepositoryLocation> LocalRepositories { get; }
     public ObservableCollection<string> GitChangedPaths { get; }
+    public ObservableCollection<SubmoduleGraphEntry> Submodules { get; }
     public ICommand LoadRepositoriesCommand { get; }
     public ICommand SignInCommand { get; }
     public ICommand SignOutCommand { get; }
@@ -103,6 +110,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand CommitStagedChangesCommand { get; }
     public ICommand PushCommand { get; }
     public ICommand CreatePullRequestCommand { get; }
+    public ICommand LoadSubmodulesCommand { get; }
+    public ICommand InitializeSubmodulesCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
@@ -114,6 +123,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public string PullRequestTitle { get => _pullRequestTitle; set { _pullRequestTitle = value; OnPropertyChanged(); } }
     public string PullRequestBody { get => _pullRequestBody; set { _pullRequestBody = value; OnPropertyChanged(); } }
     public string PullRequestBase { get => _pullRequestBase; set { _pullRequestBase = value; OnPropertyChanged(); } }
+    private string _submoduleStatusText = "未確認";
+    public string SubmoduleStatusText { get => _submoduleStatusText; private set { _submoduleStatusText = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
         get => _selectedWorkspaceProfile;
@@ -346,7 +357,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
             GitStatusText = $"ブランチ {NewBranchName} を作成しました。";
             await GetGitStatusAsync();
         }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or TimeoutException)
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or TimeoutException)
         {
             GitStatusText = exception.Message;
         }
@@ -399,7 +410,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
             GitStatusText = "コミットしました。";
             await GetGitStatusAsync();
         }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or TimeoutException)
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or TimeoutException)
         {
             GitStatusText = exception.Message;
         }
@@ -441,6 +452,52 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         {
             GitStatusText = exception.Message;
         }
+    }
+
+    private async Task LoadSubmodulesAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path)) return;
+        try { ShowSubmoduleGraph(await _submoduleService.GetGraphAsync(path)); }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or TimeoutException)
+        {
+            Submodules.Clear();
+            SubmoduleStatusText = exception.Message;
+        }
+    }
+
+    private async Task InitializeSubmodulesAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path)) return;
+        try
+        {
+            var preview = await _submoduleService.GetGraphAsync(path);
+            var pending = preview.InitializationPreview;
+            if (pending.Count == 0)
+            {
+                ShowSubmoduleGraph(preview);
+                return;
+            }
+
+            var plan = string.Join(Environment.NewLine, pending.Select(entry =>
+                $"• {entry.RelativePath} → {entry.RepositoryFullName} @ {entry.PinnedCommit[..Math.Min(12, entry.PinnedCommit.Length)]}"));
+            var confirmation = MessageBox.Show(
+                $"以下のSubmoduleを記録されたSHAで初期化します。hooksとLFSの自動ダウンロードは無効です。{Environment.NewLine}{Environment.NewLine}{plan}{Environment.NewLine}{Environment.NewLine}続けますか？",
+                "Submodule初期化の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirmation != MessageBoxResult.Yes) return;
+
+            ShowSubmoduleGraph(await _submoduleService.InitializeMissingRecursivelyAsync(path));
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or TimeoutException)
+        {
+            SubmoduleStatusText = exception.Message;
+        }
+    }
+
+    private void ShowSubmoduleGraph(SubmoduleGraph graph)
+    {
+        Submodules.Clear();
+        foreach (var entry in graph.Entries) Submodules.Add(entry);
+        SubmoduleStatusText = $"{graph.Entries.Count}件 · 未初期化 {graph.InitializationPreview.Count}件 · 記録SHAと不一致 {graph.PinnedUpdatePreview.Count}件（更新プレビューのみ）";
     }
 
     private bool TryGetSelectedRepositoryPath(out string path)

@@ -27,6 +27,12 @@
 - 理由: public repositoryの設定、hooks、credential helpersを信頼せず、意図しない・取り消しにくいGitHub書き込みを抑止する。
 - 検証: fake HTTPと一時ローカルbare repositoryで検証。実OrganizationへのPush/PR作成は未実施。
 
+## D-006: Submodule initialization
+- 状態: PHASE 06実装済み、PRレビュー待ち
+- 決定: `.gitmodules`とHEADのgitlinkから依存を走査し、URL/パスを検証した後、ユーザー確認を経て1階層ずつ初期化する。記録されたSHAを維持し、追跡ブランチの最新へ自動更新しない。
+- 安全策: hooks/LFS smudgeを無効化し、Gitのglobal/system configとテンプレートを隔離する。初期化済みモジュールのSHA差分はプレビューだけ行う。
+- 検証: nested local repositoriesによる再帰初期化とSHA差分プレビュー。組織リポジトリへの実行は未実施。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。

@@ -8,7 +8,8 @@ public interface IGitProcessRunner
 {
     Task<GitCommandResult> RunAsync(string workingDirectory, IReadOnlyList<string> arguments,
         TimeSpan timeout, CancellationToken cancellationToken = default, bool disableHooks = false,
-        bool disableFsMonitor = false, bool useGitCredentialManager = false);
+        bool disableFsMonitor = false, bool useGitCredentialManager = false,
+        bool isolateCheckoutConfiguration = false);
     Task<string?> GetGitHubCredentialUsernameAsync(string workingDirectory, CancellationToken cancellationToken = default);
 }
 

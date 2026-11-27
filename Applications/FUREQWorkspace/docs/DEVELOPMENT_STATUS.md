@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 05 — IMPLEMENTED (PR #6 preparation)
+Current: PHASE 06 — IMPLEMENTED (PR #7 preparation)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -25,14 +25,19 @@ Current: PHASE 05 — IMPLEMENTED (PR #6 preparation)
 - Git origins must be HTTPS `github.com/FUREQ-DEVELOP`; pull requires a clean worktree and an `origin/*` upstream. Writes require explicit UI confirmation.
 - PHASE 05 tests cover local bare-remote workflows, fast-forward and dirty-pull behavior, hook suppression, URL allowlisting, identity matching, and PR request/timeout behavior.
 - Current Release build succeeds with 0 warnings / 0 errors; all 23 tests pass.
+- PHASE 06 reads nested `.gitmodules` and committed gitlinks to show repository, path, pinned SHA, initialization state, and a separate pinned-SHA update preview.
+- Recursive initialization is user-confirmed, proceeds one validated level at a time, restricts remotes to FUREQ-DEVELOP HTTPS, uses the committed gitlink SHA, disables hooks and LFS smudge, isolates global/system Git config and templates, and skips already initialized modules.
+- PHASE 06 nested local graph test covers recursive initialization, pinned SHA equality, and update preview for a mismatched checkout.
+- Current Release build succeeds with 0 warnings / 0 errors; all 24 tests pass.
 
 ## In progress
 - Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, and Phase 05 PR #6 are open and awaiting independent review.
+- PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
 - PHASE 03 Device Flow and Windows Credential Manager persistence are not yet verified against live user authorization.
 - PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
 
 ## Not started
-PHASE 06-17. Setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 07-17. Setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -46,4 +51,4 @@ PHASE 06-17. Setup workflow, CI, and release artifacts do not exist yet. PHASE 0
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
 3. Review and merge PR #2-#6 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
-5. Start PHASE 06 setup workflow.
+5. Review/merge PHASE 06 PR #7 after creation, then start PHASE 07 setup workflow.

@@ -16,5 +16,8 @@ Paginate until next page is absent. Cache read-only metadata with ETag, fetched 
 ## Git subprocess
 One process runner uses ArgumentList, explicit cwd, async stdout/stderr, timeout, cancellation and exit code. Output parsers use porcelain/NUL formats where available. Command arguments and output are redacted before logging. Network operations use Git Credential Manager only. Git hooks are disabled for app-invoked operations. Pull is clean-tree, `origin/*`, fast-forward-only; push refuses protected branches and checks account identity first.
 
+## Submodules
+Build the dependency graph from committed gitlinks plus a tracked, clean `.gitmodules`. Show each path, FUREQ-DEVELOP repository, pinned SHA, current SHA and initialization state. Initialization proceeds one validated level at a time, uses the recorded SHA and never uses `--remote`. LFS smudge and hooks are disabled. Existing initialized submodules at a different SHA are reported in an update preview; they are not changed by initialization.
+
 ## File and path
 Target paths derive from approved mapping plus validated overrides. Reject path traversal, root escape, reserved Windows names and reparse-point escapes. Verify remote canonical URL/repository ID before reusing a clone.

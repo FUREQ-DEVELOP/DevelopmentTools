@@ -12,6 +12,7 @@
 - Cancellation preserves completed repositories and offers resume.
 - Token/credential never appears in logs, args, URLs or DB.
 - Submodule gitlink remains pinned unless user explicitly selects an update.
+- Nested `.gitmodules` paths and URLs are validated before recursive submodule initialization; initialization uses the committed gitlink SHA and update-preview inspection never changes the checkout.
 - API write timeout results in OutcomeUnknown and remote-state check before retry.
 
 ## CI

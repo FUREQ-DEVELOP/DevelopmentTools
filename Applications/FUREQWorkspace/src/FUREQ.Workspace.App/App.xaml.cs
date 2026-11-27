@@ -32,6 +32,7 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<IGitProcessRunner, GitProcessRunner>();
                 services.AddSingleton<IGitRemotePolicy, GitHubOrganizationRemotePolicy>();
                 services.AddSingleton<IGitRepositoryOperations, GitRepositoryOperations>();
+                services.AddSingleton<ISubmoduleService, GitSubmoduleService>();
                 var githubClient = new HttpClient
                 {
                     BaseAddress = new Uri("https://api.github.com/"),
