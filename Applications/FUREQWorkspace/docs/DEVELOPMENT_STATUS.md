@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 08 — IMPLEMENTED, LIVE API VERIFICATION PENDING (PR #9 preparation)
+Current: PHASE 08 — IMPLEMENTED, LIVE API VERIFICATION PENDING (PR #9 open)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -41,6 +41,7 @@ Current: PHASE 08 — IMPLEMENTED, LIVE API VERIFICATION PENDING (PR #9 preparat
 ## In progress
 - Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, Phase 05 PR #6, and Phase 06 PR #7 are open and awaiting independent review.
 - Phase 07 PR #8 is open and awaiting review.
+- Phase 08 PR #9 is open and awaiting review.
 - PHASE 07 LFS estimates/selection and live 14-repository pilot remain open validation items.
 - PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
 - PHASE 07 Lightweight/Complete/Custom LFS modes are deliberately blocked pending payload-size estimation and path selection. Only Development mode (skip LFS) executes.
@@ -59,9 +60,9 @@ PHASE 09-17. MVP integration, CI, and release artifacts do not exist yet. PHASE 
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for PHASE 01-07 PRs #2-#8 in dependency order; merge protections must not be bypassed.
+1. Obtain independent reviews for PHASE 01-08 PRs #2-#9 in dependency order; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Review and merge PR #2-#8 in dependency order, without bypassing branch protections.
+3. Review and merge PR #2-#9 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
 5. Review/merge PHASE 08 PR #9 after creation; verify live read access, then use only dedicated/approved targets for any live write verification.
 6. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.
