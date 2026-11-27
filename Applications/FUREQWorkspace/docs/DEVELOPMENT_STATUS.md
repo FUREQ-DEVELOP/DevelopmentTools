@@ -1,30 +1,34 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 01 — DESIGNING (local draft; PR not yet reviewed)
+Current: PHASE 02 — COMPLETED (local; PR review pending)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
-- Confirmed FUREQ Workspace has no existing source/project/tests. DevelopmentTools `main` currently contains README only.
-- PHASE 01 requirements, architecture, UI, API, security, data, Setup, tool, test, plan and contributor instructions drafted locally.
-- User approved .NET 10 LTS + Visual Studio 2026 baseline and GitHub App user Device Flow direction.
+- Confirmed FUREQ Workspace had no source/project/tests. DevelopmentTools `main` contained README only.
+- PHASE 01 design documents and contributor instructions committed as `93f160d`; PR #2 is open and awaiting independent review.
+- GitHub App `FUREQ Workspace` registered with Device Flow and installed on exactly the initial 14 selected repositories. Site was excluded. One App private key remains because GitHub does not allow deleting the last key.
+- Visual Studio Community 2026 updated to 18.12.1. .NET SDK 10.0.404 and runtime 10.0.15 are installed; the application pins SDK 10.0.404.
+- PHASE 02 initial host, navigation, debug logging, SQLite schema v1/settings repository, and migration test implemented locally.
+- PHASE 02 Release build succeeded with 0 warnings / 0 errors.
+- PHASE 02 test: SQLite migration idempotency and settings round-trip passed (1/1).
+- PHASE 02 WPF GUI started; home screen, DB initialization message and navigation to Repositories were observed.
 
 ## In progress
-- Complete document consistency review, then submit the Phase 01 PR for independent review.
-- Register GitHub App, enable Device Flow, install only on 14 initial repositories with the approved minimum permissions. User approved; owner action/configuration still pending.
-- Update local Visual Studio/.NET servicing SDK to current supported .NET 10 band. User approved baseline; installation has not yet been run.
+- Submit the Phase 02 PR stacked on Phase 01 PR #2 and obtain independent review.
+- Start PHASE 03 user authorization and read-only organization discovery after Phase 02 review.
 
 ## Not started
-PHASE 02-17. No solution, project code, test, workflow or release artifact exists yet.
+PHASE 03-17. No auth/API integration, setup workflow, CI, or release artifact exists yet.
 
 ## Environment constraints
-- Current install: VS2026 18.7.3, .NET SDK 10.0.301 and runtime 10.0.9; latest checked .NET 10 patch is 10.0.15. Update before relying on build/servicing.
-- Visual Studio 2022 17.14.17 is present but does not officially target net10.
+- Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
+- Visual Studio 2022 is also present but the app targets .NET 10 through Visual Studio 2026.
 - DevelopmentTools `main` only has README; setup PR #1 is still open/review-required. This feature uses a separate branch from main.
 - Full org setup PRs and Submodule changes are not merged; use live GitHub discovery and `.gitmodules`, not assumed PR state.
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Complete Phase 01 docs/consistency and submit PR.
-2. Complete GitHub App setup and machine SDK update.
-3. Begin Phase 02 only after design PR review.
+1. Finish Phase 02 build/tests and GUI startup check.
+2. Obtain independent review for Phase 01 PR #2; merge remains protected and must not be bypassed.
+3. Complete Phase 03 user authorization and read-only organization discovery.

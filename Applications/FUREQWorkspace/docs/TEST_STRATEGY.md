@@ -16,3 +16,7 @@
 
 ## CI
 DevelopmentTools is public. Use a small Ubuntu job for restore/build/unit checks where supported and Windows for WPF build/UI verification only as required. Minimize runs, artifacts and duration; no paid service, no LFS payload, least GITHUB_TOKEN permissions. Existing actions allowlist must be respected.
+
+## Initial automated checks
+- .NET 10 uses Microsoft Testing Platform for `dotnet test`; `global.json` selects that runner.
+- Phase 02 verifies SQLite schema migration repeatability and AppSettings round-trip with a temporary database.

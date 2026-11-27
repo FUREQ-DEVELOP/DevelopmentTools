@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <ProjectReference Include="..\FUREQ.Workspace.Application\FUREQ.Workspace.Application.csproj" />
+    <ProjectReference Include="..\FUREQ.Workspace.Domain\FUREQ.Workspace.Domain.csproj" />
+  </ItemGroup>
+</Project>
