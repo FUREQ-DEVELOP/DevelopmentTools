@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 13 — DEPENDENCY GRAPH AND TEAM REQUESTS IN PROGRESS
+Current: PHASE 13 — DEPENDENCY GRAPH AND TEAM REQUESTS IMPLEMENTED (PR #14 open)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -64,7 +64,7 @@ Current: PHASE 13 — DEPENDENCY GRAPH AND TEAM REQUESTS IN PROGRESS
 - PHASE 10 PR #11 is open and awaiting review.
 - PHASE 11 PR #12 is open and awaiting review.
 - PHASE 12 PR #13 is open and awaiting review.
-- PHASE 13 implementation is tested; PR creation pending.
+- PHASE 13 PR #14 is open and awaiting review.
 - PHASE 09 trial ZIP is not a formal release; it has not been uploaded or distributed. Clean Windows user/account trial remains pending.
 - PHASE 10 markdown viewer/editor is local-only and has not been visually checked in a clean user profile; save/update behavior is covered by local filesystem and Git tests.
 - PHASE 11 asset inventory has not been visually checked in the WPF app; live Issue creation and LFS payload access were not exercised.
