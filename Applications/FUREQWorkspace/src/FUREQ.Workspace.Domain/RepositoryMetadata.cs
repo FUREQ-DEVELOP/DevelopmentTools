@@ -8,6 +8,7 @@ public sealed record RepositoryMetadata(
     string HtmlUrl,
     string CloneUrl,
     string DefaultBranch,
+    string Visibility,
     bool Archived,
     bool Fork,
     DateTimeOffset UpdatedAt);

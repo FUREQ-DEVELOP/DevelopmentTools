@@ -5,7 +5,9 @@ All organization repositories and Projects are Public. Repository Markdown, Git 
 
 ## Authentication
 - Guest mode for public discovery/clone/read.
-- Proposed GitHub App user Device Flow for API actions. Tokens are short-lived; use refresh token only when enabled and store access/refresh credentials in Windows Credential Manager, with DPAPI protection as fallback.
+- GitHub App user Device Flow for API actions. Request `offline_access` so GitHub returns expiring tokens and a refresh token; store the pair in Windows Credential Manager. Never put them in SQLite, JSON files, environment variables, command arguments or logs.
+- Device verification URLs are accepted only when they are HTTPS `github.com/login/device`. The public Client ID identifies the registered App and is not a secret; the App private key is never shipped in the desktop app.
+- Authenticated repository results are constrained by the intersection of the user's access and the GitHub App's installed permissions/repository selection. Team results are filtered to FUREQ-DEVELOP.
 - Git HTTPS credential is managed separately by Git Credential Manager. Detect username/account mismatch before a write.
 - App installation permissions are the intersection of app grant and signed-in user's GitHub permissions. No PAT prompts, copied CLI token, private key or client secret in the app.
 

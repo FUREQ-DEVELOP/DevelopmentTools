@@ -10,16 +10,20 @@ public sealed class GitHubPublicRepositoryDiscovery(HttpClient httpClient) : IRe
 {
     private const string Organization = "FUREQ-DEVELOP";
 
-    public async Task<IReadOnlyList<RepositoryMetadata>> GetPublicRepositoriesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RepositoryMetadata>> GetRepositoriesAsync(string? accessToken = null, CancellationToken cancellationToken = default)
     {
         var repositories = new List<RepositoryMetadata>();
         for (var page = 1; ; page++)
         {
             using var request = new HttpRequestMessage(
                 HttpMethod.Get,
-                $"orgs/{Organization}/repos?type=public&sort=full_name&direction=asc&per_page=100&page={page}");
+                $"orgs/{Organization}/repos?type={(accessToken is null ? "public" : "all")}&sort=full_name&direction=asc&per_page=100&page={page}");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+            if (accessToken is not null)
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
 
             using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -28,7 +32,7 @@ public sealed class GitHubPublicRepositoryDiscovery(HttpClient httpClient) : IRe
 
             repositories.AddRange(items.Select(item => new RepositoryMetadata(
                 item.Id, item.Name, item.FullName, item.Description, item.HtmlUrl, item.CloneUrl,
-                item.DefaultBranch, item.Archived, item.Fork, item.UpdatedAt)));
+                item.DefaultBranch, item.IsPrivate ? "private" : "public", item.Archived, item.Fork, item.UpdatedAt)));
 
             if (items.Length < 100)
             {
@@ -45,6 +49,7 @@ public sealed class GitHubPublicRepositoryDiscovery(HttpClient httpClient) : IRe
         [property: JsonPropertyName("html_url")] string HtmlUrl,
         [property: JsonPropertyName("clone_url")] string CloneUrl,
         [property: JsonPropertyName("default_branch")] string DefaultBranch,
+        [property: JsonPropertyName("private")] bool IsPrivate,
         [property: JsonPropertyName("archived")] bool Archived,
         [property: JsonPropertyName("fork")] bool Fork,
         [property: JsonPropertyName("updated_at")] DateTimeOffset UpdatedAt);

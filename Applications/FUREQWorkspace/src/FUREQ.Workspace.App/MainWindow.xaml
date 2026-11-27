@@ -65,6 +65,14 @@
                         </Style>
                     </Border.Style>
                     <StackPanel>
+                        <TextBlock Text="{Binding AuthenticationStatus}" Margin="0,0,0,10" Foreground="#55636C" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button Content="GitHubでサインイン" Command="{Binding SignInCommand}" Padding="14,8" />
+                            <Button Content="この端末からサインアウト" Command="{Binding SignOutCommand}"
+                                    Padding="14,8" Margin="8,0,0,0" />
+                            <Button Content="認証をキャンセル" Command="{Binding CancelSignInCommand}"
+                                    Padding="14,8" Margin="8,0,0,0" />
+                        </StackPanel>
                         <Button Content="公開リポジトリを更新" Command="{Binding LoadRepositoriesCommand}"
                                 HorizontalAlignment="Left" Padding="14,8" />
                         <TextBlock Text="{Binding RepositoryStatus}" Margin="0,12,0,8" Foreground="#55636C" />
@@ -75,7 +83,17 @@
                                 <DataGridTextColumn Header="リポジトリ" Binding="{Binding FullName}" Width="2*" />
                                 <DataGridTextColumn Header="説明" Binding="{Binding Description}" Width="3*" />
                                 <DataGridCheckBoxColumn Header="Archived" Binding="{Binding Archived}" Width="90" />
+                                <DataGridTextColumn Header="公開範囲" Binding="{Binding Visibility}" Width="90" />
                                 <DataGridTextColumn Header="更新" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd}}" Width="100" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="所属チーム" FontSize="16" FontWeight="SemiBold" Margin="0,18,0,8" />
+                        <DataGrid ItemsSource="{Binding Teams}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  MinHeight="70" MaxHeight="180">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="チーム" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="識別子" Binding="{Binding Slug}" Width="*" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>

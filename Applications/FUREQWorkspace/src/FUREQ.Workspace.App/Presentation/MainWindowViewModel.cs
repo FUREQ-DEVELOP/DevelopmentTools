@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Net.Http;
+using System.Diagnostics;
+using System.Windows;
 using FUREQ.Workspace.Application;
 using FUREQ.Workspace.Domain;
 
@@ -12,15 +14,28 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 {
     private readonly RelayCommand _navigateCommand;
     private readonly IRepositoryDiscovery _repositoryDiscovery;
+    private readonly IGitHubAuthorization _authorization;
+    private readonly IGitHubAccountDiscovery _accountDiscovery;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
+    private string _authenticationStatus = "ゲストモード（公開情報のみ）";
+    private CancellationTokenSource? _signInCancellation;
 
-    public MainWindowViewModel(IRepositoryDiscovery repositoryDiscovery)
+    public MainWindowViewModel(
+        IRepositoryDiscovery repositoryDiscovery,
+        IGitHubAuthorization authorization,
+        IGitHubAccountDiscovery accountDiscovery)
     {
         _repositoryDiscovery = repositoryDiscovery;
+        _authorization = authorization;
+        _accountDiscovery = accountDiscovery;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
+        SignInCommand = new AsyncRelayCommand(SignInAsync);
+        SignOutCommand = new RelayCommand(_ => SignOut());
+        CancelSignInCommand = new RelayCommand(_ => _signInCancellation?.Cancel());
         Repositories = [];
+        Teams = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
@@ -34,9 +49,14 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
     public ObservableCollection<NavigationItem> NavigationItems { get; }
     public ObservableCollection<RepositoryMetadata> Repositories { get; }
+    public ObservableCollection<GitHubTeam> Teams { get; }
     public ICommand LoadRepositoriesCommand { get; }
+    public ICommand SignInCommand { get; }
+    public ICommand SignOutCommand { get; }
+    public ICommand CancelSignInCommand { get; }
     public string CurrentKey => _currentKey;
     public string RepositoryStatus { get => _repositoryStatus; private set { _repositoryStatus = value; OnPropertyChanged(); } }
+    public string AuthenticationStatus { get => _authenticationStatus; private set { _authenticationStatus = value; OnPropertyChanged(); } }
 
     public string DatabaseStatus => "ローカル設定データベースを初期化しました。認証情報は保存していません。";
 
@@ -74,7 +94,22 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         RepositoryStatus = "GitHubから公開リポジトリを取得中…";
         try
         {
-            var repositories = await _repositoryDiscovery.GetPublicRepositoriesAsync();
+            var accessToken = await _authorization.GetAccessTokenAsync();
+            if (accessToken is null)
+            {
+                AuthenticationStatus = "ゲストモード（公開情報のみ）";
+                Teams.Clear();
+            }
+            else
+            {
+                var account = await _accountDiscovery.GetCurrentAccountAsync(accessToken);
+                var teams = await _accountDiscovery.GetTeamsAsync(accessToken);
+                Teams.Clear();
+                foreach (var team in teams) Teams.Add(team);
+                AuthenticationStatus = $"{account.Name} (@{account.Login}) · チーム {teams.Count} 件";
+            }
+
+            var repositories = await _repositoryDiscovery.GetRepositoriesAsync(accessToken);
             Repositories.Clear();
             foreach (var repository in repositories)
             {
@@ -94,6 +129,59 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         catch (Exception)
         {
             RepositoryStatus = "リポジトリを取得できませんでした。時間をおいて再試行してください。";
+        }
+    }
+
+    private async Task SignInAsync()
+    {
+        using var cancellation = new CancellationTokenSource();
+        _signInCancellation = cancellation;
+        try
+        {
+            var request = await _authorization.BeginAsync(cancellation.Token);
+            Process.Start(new ProcessStartInfo(request.VerificationUri.AbsoluteUri) { UseShellExecute = true });
+            var result = MessageBox.Show(
+                $"ブラウザーでGitHubにサインインし、このアプリを承認してください。\n\nURL: {request.VerificationUri}\nコード: {request.UserCode}\n\n承認後にOKを押すと、完了を確認します。",
+                "GitHubでサインイン",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Information);
+            if (result != MessageBoxResult.OK) return;
+
+            RepositoryStatus = "GitHubの承認を確認中…";
+            await _authorization.CompleteAsync(request, cancellation.Token);
+            var accessToken = await _authorization.GetAccessTokenAsync(cancellation.Token);
+            if (accessToken is null) throw new InvalidOperationException("GitHubの認証情報を取得できませんでした。");
+            var account = await _accountDiscovery.GetCurrentAccountAsync(accessToken, cancellation.Token);
+            AuthenticationStatus = $"{account.Name} (@{account.Login})";
+            await LoadRepositoriesAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            RepositoryStatus = "GitHub認証をキャンセルしました。";
+        }
+        catch (Exception)
+        {
+            RepositoryStatus = "GitHub認証に失敗しました。接続を確認して、もう一度お試しください。";
+        }
+        finally
+        {
+            _signInCancellation = null;
+        }
+    }
+
+    private void SignOut()
+    {
+        try
+        {
+            _authorization.SignOut();
+            Teams.Clear();
+            Repositories.Clear();
+            AuthenticationStatus = "ゲストモード（公開情報のみ）";
+            RepositoryStatus = "この端末からサインアウトしました。";
+        }
+        catch (Exception)
+        {
+            RepositoryStatus = "認証情報を削除できませんでした。Windows資格情報マネージャーを確認してください。";
         }
     }
 

@@ -36,6 +36,9 @@ public partial class App : System.Windows.Application
                 githubClient.DefaultRequestHeaders.UserAgent.ParseAdd("FUREQ-Workspace/0.1");
                 services.AddSingleton(githubClient);
                 services.AddSingleton<IRepositoryDiscovery, GitHubPublicRepositoryDiscovery>();
+                services.AddSingleton<ICredentialVault, WindowsCredentialVault>();
+                services.AddSingleton<IGitHubAuthorization, GitHubDeviceFlowAuthorization>();
+                services.AddSingleton<IGitHubAccountDiscovery, GitHubAccountDiscovery>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })

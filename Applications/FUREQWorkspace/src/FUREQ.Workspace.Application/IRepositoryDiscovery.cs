@@ -4,5 +4,5 @@ namespace FUREQ.Workspace.Application;
 
 public interface IRepositoryDiscovery
 {
-    Task<IReadOnlyList<RepositoryMetadata>> GetPublicRepositoriesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<RepositoryMetadata>> GetRepositoriesAsync(string? accessToken = null, CancellationToken cancellationToken = default);
 }
