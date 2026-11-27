@@ -29,6 +29,9 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<DatabaseInitializer>();
                 services.AddSingleton<IAppSettingsRepository, SqliteAppSettingsRepository>();
                 services.AddSingleton<IWorkspaceInventory, SqliteWorkspaceInventory>();
+                services.AddSingleton<IGitProcessRunner, GitProcessRunner>();
+                services.AddSingleton<IGitRemotePolicy, GitHubOrganizationRemotePolicy>();
+                services.AddSingleton<IGitRepositoryOperations, GitRepositoryOperations>();
                 var githubClient = new HttpClient
                 {
                     BaseAddress = new Uri("https://api.github.com/"),
@@ -40,6 +43,8 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<ICredentialVault, WindowsCredentialVault>();
                 services.AddSingleton<IGitHubAuthorization, GitHubDeviceFlowAuthorization>();
                 services.AddSingleton<IGitHubAccountDiscovery, GitHubAccountDiscovery>();
+                services.AddSingleton<IGitWriteIdentityValidator, GitHubGitWriteIdentityValidator>();
+                services.AddSingleton<IGitHubPullRequestService, GitHubPullRequestService>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })

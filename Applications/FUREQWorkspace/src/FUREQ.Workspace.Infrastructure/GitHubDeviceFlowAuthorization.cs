@@ -205,7 +205,7 @@ public sealed class GitHubAccountDiscovery(HttpClient httpClient) : IGitHubAccou
         var request = new HttpRequestMessage(HttpMethod.Get, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        request.Headers.Add("X-GitHub-Api-Version", "2026-03-10");
         return request;
     }
 

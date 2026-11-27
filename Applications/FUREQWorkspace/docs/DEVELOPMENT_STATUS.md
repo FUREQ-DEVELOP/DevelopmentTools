@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 04 — COMPLETED (PR #5 open; review pending)
+Current: PHASE 05 — IMPLEMENTED (PR #6 preparation)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -20,14 +20,19 @@ Current: PHASE 04 — COMPLETED (PR #5 open; review pending)
 - PHASE 04 schema v2 adds workspace profiles and local repository inventory; duplicate canonical paths are rejected and re-scanning is idempotent.
 - PHASE 04 inventory examines only immediate child folders, skips reparse points, and checks only for a `.git` marker without reading config or running Git.
 - PHASE 04 tests cover v1-to-v2 data-preserving migration, duplicate profile paths, immediate-only discovery, repeat scans, and missing-folder status.
-- Current Release build succeeds with 0 warnings / 0 errors; all 10 tests pass.
+- PHASE 05 adds safe Git status/branch creation/fetch/fast-forward-only pull/staged commit/push and pull request creation.
+- Git commands use ArgumentList, explicit working directory, bounded async output, timeout/cancellation, disabled hooks and Git Credential Manager only for network operations. Push checks the signed-in GitHub account against the GCM username and refuses protected branches.
+- Git origins must be HTTPS `github.com/FUREQ-DEVELOP`; pull requires a clean worktree and an `origin/*` upstream. Writes require explicit UI confirmation.
+- PHASE 05 tests cover local bare-remote workflows, fast-forward and dirty-pull behavior, hook suppression, URL allowlisting, identity matching, and PR request/timeout behavior.
+- Current Release build succeeds with 0 warnings / 0 errors; all 23 tests pass.
 
 ## In progress
-- Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, and Phase 04 PR #5 are open and awaiting independent review.
+- Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, and Phase 05 PR #6 are open and awaiting independent review.
 - PHASE 03 Device Flow and Windows Credential Manager persistence are not yet verified against live user authorization.
+- PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
 
 ## Not started
-PHASE 05-17. Git operations, setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 06-17. Setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -39,4 +44,6 @@ PHASE 05-17. Git operations, setup workflow, CI, and release artifacts do not ex
 ## Next
 1. Obtain independent reviews for Phase 01-04 PRs #2-#5; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Start Phase 05 Git operations using the safe process-runner and repository-identity rules.
+3. Review and merge PR #2-#6 in dependency order, without bypassing branch protections.
+4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
+5. Start PHASE 06 setup workflow.

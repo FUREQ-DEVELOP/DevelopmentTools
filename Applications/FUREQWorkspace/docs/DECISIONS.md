@@ -21,6 +21,12 @@
 - 状態: 承認済み
 - 決定: 新規repoなし。実装はDevelopmentTools内のfeature branch/PR。試験配布はwin-x64 self-contained ZIP、正式Releaseは別途承認。
 
+## D-005: Git writes in the desktop app
+- 状態: PHASE 05実装済み、PRレビュー待ち
+- 決定: Git操作は単一のProcessRunnerを通し、hooksを無効化する。PushはGitHub AppユーザーとGit Credential Managerアカウントの一致確認後、保護ブランチ以外にのみ許可する。Pullはcleanなworktreeに対するorigin追跡先からのfast-forwardのみ。GitHubへの書き込みはUIで毎回確認する。
+- 理由: public repositoryの設定、hooks、credential helpersを信頼せず、意図しない・取り消しにくいGitHub書き込みを抑止する。
+- 検証: fake HTTPと一時ローカルbare repositoryで検証。実OrganizationへのPush/PR作成は未実施。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。

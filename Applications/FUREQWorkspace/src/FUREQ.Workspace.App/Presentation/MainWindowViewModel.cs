@@ -19,6 +19,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly IGitHubAuthorization _authorization;
     private readonly IGitHubAccountDiscovery _accountDiscovery;
     private readonly IWorkspaceInventory _workspaceInventory;
+    private readonly IGitRepositoryOperations _gitOperations;
+    private readonly IGitHubPullRequestService _pullRequestService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -27,17 +29,29 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _workspaceName = "";
     private string _workspaceRole = "";
     private string _workspaceRootPath = "";
+    private LocalRepositoryLocation? _selectedLocalRepository;
+    private GitRepositorySnapshot? _gitSnapshot;
+    private string _gitStatusText = "ローカルリポジトリを選択して状態を確認してください。";
+    private string _newBranchName = "";
+    private string _commitMessage = "";
+    private string _pullRequestTitle = "";
+    private string _pullRequestBody = "";
+    private string _pullRequestBase = "main";
 
     public MainWindowViewModel(
         IRepositoryDiscovery repositoryDiscovery,
         IGitHubAuthorization authorization,
         IGitHubAccountDiscovery accountDiscovery,
-        IWorkspaceInventory workspaceInventory)
+        IWorkspaceInventory workspaceInventory,
+        IGitRepositoryOperations gitOperations,
+        IGitHubPullRequestService pullRequestService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
         _accountDiscovery = accountDiscovery;
         _workspaceInventory = workspaceInventory;
+        _gitOperations = gitOperations;
+        _pullRequestService = pullRequestService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -46,10 +60,18 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         CreateWorkspaceProfileCommand = new AsyncRelayCommand(CreateWorkspaceProfileAsync);
         ScanLocalRepositoriesCommand = new AsyncRelayCommand(ScanLocalRepositoriesAsync);
         BrowseWorkspaceRootCommand = new RelayCommand(_ => BrowseWorkspaceRoot());
+        GetGitStatusCommand = new AsyncRelayCommand(GetGitStatusAsync);
+        CreateBranchCommand = new AsyncRelayCommand(CreateBranchAsync);
+        FetchCommand = new AsyncRelayCommand(FetchAsync);
+        PullFastForwardCommand = new AsyncRelayCommand(PullFastForwardAsync);
+        CommitStagedChangesCommand = new AsyncRelayCommand(CommitStagedChangesAsync);
+        PushCommand = new AsyncRelayCommand(PushAsync);
+        CreatePullRequestCommand = new AsyncRelayCommand(CreatePullRequestAsync);
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
         LocalRepositories = [];
+        GitChangedPaths = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
@@ -66,6 +88,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<GitHubTeam> Teams { get; }
     public ObservableCollection<WorkspaceProfile> WorkspaceProfiles { get; }
     public ObservableCollection<LocalRepositoryLocation> LocalRepositories { get; }
+    public ObservableCollection<string> GitChangedPaths { get; }
     public ICommand LoadRepositoriesCommand { get; }
     public ICommand SignInCommand { get; }
     public ICommand SignOutCommand { get; }
@@ -73,9 +96,24 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand CreateWorkspaceProfileCommand { get; }
     public ICommand ScanLocalRepositoriesCommand { get; }
     public ICommand BrowseWorkspaceRootCommand { get; }
+    public ICommand GetGitStatusCommand { get; }
+    public ICommand CreateBranchCommand { get; }
+    public ICommand FetchCommand { get; }
+    public ICommand PullFastForwardCommand { get; }
+    public ICommand CommitStagedChangesCommand { get; }
+    public ICommand PushCommand { get; }
+    public ICommand CreatePullRequestCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
+    public LocalRepositoryLocation? SelectedLocalRepository { get => _selectedLocalRepository; set { _selectedLocalRepository = value; OnPropertyChanged(); } }
+    public GitRepositorySnapshot? GitSnapshot { get => _gitSnapshot; private set { _gitSnapshot = value; OnPropertyChanged(); } }
+    public string GitStatusText { get => _gitStatusText; private set { _gitStatusText = value; OnPropertyChanged(); } }
+    public string NewBranchName { get => _newBranchName; set { _newBranchName = value; OnPropertyChanged(); } }
+    public string CommitMessage { get => _commitMessage; set { _commitMessage = value; OnPropertyChanged(); } }
+    public string PullRequestTitle { get => _pullRequestTitle; set { _pullRequestTitle = value; OnPropertyChanged(); } }
+    public string PullRequestBody { get => _pullRequestBody; set { _pullRequestBody = value; OnPropertyChanged(); } }
+    public string PullRequestBase { get => _pullRequestBase; set { _pullRequestBase = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
         get => _selectedWorkspaceProfile;
@@ -280,6 +318,150 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     {
         var dialog = new OpenFolderDialog { Title = "ワークスペースの保存先を選択", Multiselect = false };
         if (dialog.ShowDialog() == true) WorkspaceRootPath = dialog.FolderName;
+    }
+
+    private async Task GetGitStatusAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path)) return;
+        try
+        {
+            GitSnapshot = await _gitOperations.GetStatusAsync(path);
+            GitStatusText = FormatGitStatus(GitSnapshot);
+            RefreshGitChangedPaths();
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or IOException or TimeoutException)
+        {
+            GitSnapshot = null;
+            GitChangedPaths.Clear();
+            GitStatusText = exception.Message;
+        }
+    }
+
+    private async Task CreateBranchAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path)) return;
+        try
+        {
+            await _gitOperations.CreateBranchAsync(path, NewBranchName);
+            GitStatusText = $"ブランチ {NewBranchName} を作成しました。";
+            await GetGitStatusAsync();
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or TimeoutException)
+        {
+            GitStatusText = exception.Message;
+        }
+    }
+
+    private async Task FetchAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path)) return;
+        try
+        {
+            GitSnapshot = await _gitOperations.FetchAsync(path);
+            GitStatusText = $"Fetch完了。{FormatGitStatus(GitSnapshot)}";
+            RefreshGitChangedPaths();
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or IOException or TimeoutException)
+        {
+            GitStatusText = exception.Message;
+        }
+    }
+
+    private async Task PullFastForwardAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path) || GitSnapshot is null) return;
+        var result = MessageBox.Show(
+            $"{GitSnapshot.RepositoryFullName}\n{GitSnapshot.Branch} ← {GitSnapshot.Upstream}\n\n作業ツリーがcleanの場合のみ、fast-forwardで更新します。続けますか？",
+            "Pullの確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes) return;
+        try
+        {
+            GitSnapshot = await _gitOperations.PullFastForwardAsync(path);
+            GitStatusText = $"Fast-forward Pull完了。{FormatGitStatus(GitSnapshot)}";
+            RefreshGitChangedPaths();
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or IOException or TimeoutException)
+        {
+            GitStatusText = exception.Message;
+        }
+    }
+
+    private async Task CommitStagedChangesAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path) || GitSnapshot is null) return;
+        var result = MessageBox.Show(
+            $"{GitSnapshot.RepositoryFullName}\nブランチ: {GitSnapshot.Branch}\nメッセージ: {CommitMessage}\n\nGitHub Desktop等でステージ済みの変更をコミットします。よろしいですか？",
+            "コミットの確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes) return;
+        try
+        {
+            await _gitOperations.CommitStagedChangesAsync(path, CommitMessage);
+            GitStatusText = "コミットしました。";
+            await GetGitStatusAsync();
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or TimeoutException)
+        {
+            GitStatusText = exception.Message;
+        }
+    }
+
+    private async Task PushAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path) || GitSnapshot is null) return;
+        var result = MessageBox.Show(
+            $"{GitSnapshot.RepositoryFullName}\noriginへ {GitSnapshot.Branch} をPushします。強制Pushは行いません。よろしいですか？",
+            "Pushの確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes) return;
+        try
+        {
+            await _gitOperations.PushAsync(path);
+            GitSnapshot = await _gitOperations.GetStatusAsync(path);
+            GitStatusText = $"Push完了。{FormatGitStatus(GitSnapshot)}";
+            RefreshGitChangedPaths();
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or IOException or TimeoutException)
+        {
+            GitStatusText = "Pushできませんでした。認証、ブランチ保護、ネットワークを確認してください。";
+        }
+    }
+
+    private async Task CreatePullRequestAsync()
+    {
+        if (!TryGetSelectedRepositoryPath(out var path) || GitSnapshot is null) return;
+        var result = MessageBox.Show(
+            $"{GitSnapshot.RepositoryFullName}\n{GitSnapshot.Branch} → {PullRequestBase}\n{PullRequestTitle}\n\nGitHubにPull Requestを作成します。よろしいですか？",
+            "Pull Requestの確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes) return;
+        try
+        {
+            var pullRequest = await _pullRequestService.CreateAsync(path, PullRequestTitle, PullRequestBody, PullRequestBase);
+            GitStatusText = $"PR #{pullRequest.Number}を作成しました: {pullRequest.HtmlUrl}";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException)
+        {
+            GitStatusText = exception.Message;
+        }
+    }
+
+    private bool TryGetSelectedRepositoryPath(out string path)
+    {
+        path = SelectedLocalRepository?.Path ?? "";
+        if (string.IsNullOrEmpty(path)) GitStatusText = "先にローカルリポジトリを選択してください。";
+        return !string.IsNullOrEmpty(path);
+    }
+
+    private void RefreshGitChangedPaths()
+    {
+        GitChangedPaths.Clear();
+        if (GitSnapshot is null) return;
+        foreach (var path in GitSnapshot.ChangedPaths) GitChangedPaths.Add(path);
+    }
+
+    private static string FormatGitStatus(GitRepositorySnapshot? snapshot)
+    {
+        if (snapshot is null) return "Git状態を取得できませんでした。";
+        var state = snapshot.HasConflicts ? "競合あり" : snapshot.IsDirty ? $"変更 {snapshot.ChangedPaths.Count} 件" : "clean";
+        return $"{snapshot.RepositoryFullName} · {snapshot.Branch} · {state} · ahead {snapshot.Ahead} / behind {snapshot.Behind}";
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
