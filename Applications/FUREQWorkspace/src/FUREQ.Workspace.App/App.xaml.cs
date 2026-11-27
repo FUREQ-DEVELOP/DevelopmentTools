@@ -4,6 +4,7 @@ using FUREQ.Workspace.App.Presentation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
 using System.Windows;
 
 namespace FUREQ.Workspace.App;
@@ -27,6 +28,31 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<WorkspaceDatabase>();
                 services.AddSingleton<DatabaseInitializer>();
                 services.AddSingleton<IAppSettingsRepository, SqliteAppSettingsRepository>();
+                services.AddSingleton<IWorkspaceInventory, SqliteWorkspaceInventory>();
+                services.AddSingleton<IGitProcessRunner, GitProcessRunner>();
+                services.AddSingleton<IGitRemotePolicy, GitHubOrganizationRemotePolicy>();
+                services.AddSingleton<IGitRepositoryOperations, GitRepositoryOperations>();
+                services.AddSingleton<ISubmoduleService, GitSubmoduleService>();
+                services.AddSingleton<ISetupProgressStore, SqliteSetupProgressStore>();
+                services.AddSingleton<IWorkspaceSetupService, WorkspaceSetupService>();
+                services.AddSingleton<IMarkdownDocumentService, MarkdownDocumentService>();
+                services.AddSingleton<IWorkspaceAssetService, WorkspaceAssetService>();
+                services.AddSingleton<IWorkspaceToolService, WorkspaceToolService>();
+                services.AddSingleton<IDependencyGraphService, DependencyGraphService>();
+                var githubClient = new HttpClient
+                {
+                    BaseAddress = new Uri("https://api.github.com/"),
+                    Timeout = TimeSpan.FromSeconds(30)
+                };
+                githubClient.DefaultRequestHeaders.UserAgent.ParseAdd("FUREQ-Workspace/0.1");
+                services.AddSingleton(githubClient);
+                services.AddSingleton<IRepositoryDiscovery, GitHubPublicRepositoryDiscovery>();
+                services.AddSingleton<ICredentialVault, WindowsCredentialVault>();
+                services.AddSingleton<IGitHubAuthorization, GitHubDeviceFlowAuthorization>();
+                services.AddSingleton<IGitHubAccountDiscovery, GitHubAccountDiscovery>();
+                services.AddSingleton<IGitWriteIdentityValidator, GitHubGitWriteIdentityValidator>();
+                services.AddSingleton<IGitHubPullRequestService, GitHubPullRequestService>();
+                services.AddSingleton<IGitHubCollaborationService, GitHubCollaborationService>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })
@@ -36,7 +62,9 @@ public partial class App : System.Windows.Application
         {
             await _host.StartAsync();
             await _host.Services.GetRequiredService<DatabaseInitializer>().InitializeAsync();
-            MainWindow = _host.Services.GetRequiredService<MainWindow>();
+            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+            await ((MainWindowViewModel)mainWindow.DataContext).InitializeAsync();
+            MainWindow = mainWindow;
             MainWindow.Show();
         }
         catch (Exception exception)
