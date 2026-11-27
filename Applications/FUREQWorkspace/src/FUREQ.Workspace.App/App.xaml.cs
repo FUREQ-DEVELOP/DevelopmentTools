@@ -35,6 +35,7 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<ISubmoduleService, GitSubmoduleService>();
                 services.AddSingleton<ISetupProgressStore, SqliteSetupProgressStore>();
                 services.AddSingleton<IWorkspaceSetupService, WorkspaceSetupService>();
+                services.AddSingleton<IMarkdownDocumentService, MarkdownDocumentService>();
                 var githubClient = new HttpClient
                 {
                     BaseAddress = new Uri("https://api.github.com/"),

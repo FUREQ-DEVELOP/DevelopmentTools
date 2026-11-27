@@ -26,6 +26,8 @@ Issues, pull requests, and Organization Projects are read with the signed-in App
 
 The PHASE 09 ZIP is a local trial artifact, not a formal release. It contains no token or private key and is not uploaded by the publish script. Run it first under a clean Windows account before wider distribution.
 
+Markdown documents are read and written only inside the selected local Git repository. Only `.md` files are listed/searched; `.git`, build/dependency directories and reparse points are skipped. Bound individual documents to 2 MiB, total search/list size to 50 MiB and result count to 5,000. Show source text without executing HTML, scripts, remote images, or embedded content. Save requires a path-specific confirmation and atomic local replacement; Git remains the change/diff review surface.
+
 ## Logs/database
 No tokens, authorization headers, credential output, complete private paths unless needed, or unnecessary source/issue content in logs. Local DB holds only settings, worktree inventory, cache and resumable setup state. Define bounded retention before Phase 02. Do not commit live DBs.
 

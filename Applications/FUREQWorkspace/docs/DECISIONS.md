@@ -44,6 +44,12 @@
 - 決定: Issues/PRsはREST、Organization ProjectsはProjects v2 GraphQLで読む。Issue作成とProjectへの追加は別々に確認する。認証ユーザーのApp tokenとGitHub側の権限を尊重し、タイムアウトした書き込みは自動再試行しない。
 - 検証: fake HTTPで読み書きpayloadとtoken headerを確認。実Organizationへの書き込みは未実施。
 
+## D-009: Markdown safety
+- 状態: PHASE 10実装済み、PRレビュー待ち
+- 決定: Markdownは初期版ではHTMLとして描画せず、ソーステキストとして閲覧・編集する。検索は選択中のローカルGit repo内の`.md`だけ。保存前に相対パスを表示して確認する。
+- 制限: リポジトリ外/リンク先を拒否し、ファイル2 MiB、走査50 MiB、件数5,000件を上限とする。テンプレートはアプリ内固定文面のみ。
+- 検証: path validation、検索/保存、Git diffの一時リポジトリ試験。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。

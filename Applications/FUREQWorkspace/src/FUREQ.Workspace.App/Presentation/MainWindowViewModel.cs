@@ -24,6 +24,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly ISubmoduleService _submoduleService;
     private readonly IWorkspaceSetupService _workspaceSetupService;
     private readonly IGitHubCollaborationService _collaborationService;
+    private readonly IMarkdownDocumentService _markdownService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -53,6 +54,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _issueBody = "";
     private string _collaborationStatusText = "リポジトリを選んでIssue/PR/Projectsを読み込みます。";
     private GitHubWorkItem? _selectedIssue;
+    private string _markdownRelativePath = "";
+    private string _markdownContent = "";
+    private string _markdownSearchQuery = "";
+    private string _markdownStatusText = "ローカルリポジトリを選択してMarkdownを読み込みます。";
 
     public MainWindowViewModel(
         IRepositoryDiscovery repositoryDiscovery,
@@ -63,7 +68,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         IGitHubPullRequestService pullRequestService,
         ISubmoduleService submoduleService,
         IWorkspaceSetupService workspaceSetupService,
-        IGitHubCollaborationService collaborationService)
+        IGitHubCollaborationService collaborationService,
+        IMarkdownDocumentService markdownService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
@@ -74,6 +80,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         _submoduleService = submoduleService;
         _workspaceSetupService = workspaceSetupService;
         _collaborationService = collaborationService;
+        _markdownService = markdownService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -101,6 +108,11 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         LoadProjectsCommand = new AsyncRelayCommand(LoadProjectsAsync);
         LoadProjectItemsCommand = new AsyncRelayCommand(LoadProjectItemsAsync);
         AddIssueToProjectCommand = new AsyncRelayCommand(AddIssueToProjectAsync);
+        LoadMarkdownDocumentsCommand = new AsyncRelayCommand(LoadMarkdownDocumentsAsync);
+        OpenMarkdownCommand = new AsyncRelayCommand(OpenMarkdownAsync);
+        SearchMarkdownCommand = new AsyncRelayCommand(SearchMarkdownAsync);
+        SaveMarkdownCommand = new AsyncRelayCommand(SaveMarkdownAsync);
+        InsertMarkdownTemplateCommand = new RelayCommand(InsertMarkdownTemplate);
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
@@ -114,11 +126,14 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         PullRequests = [];
         Projects = [];
         ProjectItems = [];
+        MarkdownDocuments = [];
+        MarkdownSearchResults = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
             new NavigationItem("repositories", "リポジトリ", _navigateCommand),
             new NavigationItem("setup", "ワークスペース", _navigateCommand),
+            new NavigationItem("documents", "ドキュメント", _navigateCommand),
             new NavigationItem("settings", "設定", _navigateCommand)
         ];
     }
@@ -137,6 +152,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<GitHubWorkItem> PullRequests { get; }
     public ObservableCollection<GitHubProject> Projects { get; }
     public ObservableCollection<GitHubProjectItem> ProjectItems { get; }
+    public ObservableCollection<MarkdownDocument> MarkdownDocuments { get; }
+    public ObservableCollection<MarkdownSearchResult> MarkdownSearchResults { get; }
     public IReadOnlyList<WorkspaceSetupMode> SetupModes { get; }
     public IReadOnlyList<LfsDownloadMode> LfsModes { get; }
     public ICommand LoadRepositoriesCommand { get; }
@@ -165,6 +182,11 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand LoadProjectsCommand { get; }
     public ICommand LoadProjectItemsCommand { get; }
     public ICommand AddIssueToProjectCommand { get; }
+    public ICommand LoadMarkdownDocumentsCommand { get; }
+    public ICommand OpenMarkdownCommand { get; }
+    public ICommand SearchMarkdownCommand { get; }
+    public ICommand SaveMarkdownCommand { get; }
+    public ICommand InsertMarkdownTemplateCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
@@ -189,6 +211,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public string IssueTitle { get => _issueTitle; set { _issueTitle = value; OnPropertyChanged(); } }
     public string IssueBody { get => _issueBody; set { _issueBody = value; OnPropertyChanged(); } }
     public string CollaborationStatusText { get => _collaborationStatusText; private set { _collaborationStatusText = value; OnPropertyChanged(); } }
+    public string MarkdownRelativePath { get => _markdownRelativePath; set { _markdownRelativePath = value; OnPropertyChanged(); } }
+    public string MarkdownContent { get => _markdownContent; set { _markdownContent = value; OnPropertyChanged(); } }
+    public string MarkdownSearchQuery { get => _markdownSearchQuery; set { _markdownSearchQuery = value; OnPropertyChanged(); } }
+    public string MarkdownStatusText { get => _markdownStatusText; private set { _markdownStatusText = value; OnPropertyChanged(); } }
     public string CustomRepositoryNames { get => _customRepositoryNames; set { _customRepositoryNames = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
@@ -219,6 +245,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     {
         "repositories" => "リポジトリ",
         "setup" => "ワークスペース",
+        "documents" => "ドキュメント",
         "settings" => "設定",
         _ => "開発ワークスペース"
     };
@@ -227,6 +254,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     {
         "repositories" => "FUREQ-DEVELOPのリポジトリを一覧し、ローカルの作業場所と状態を確認します。",
         "setup" => "班や職種ごとの作業プロファイルを管理し、指定フォルダー内のローカルリポジトリを確認します。",
+        "documents" => "ローカルリポジトリのMarkdownを安全に閲覧・編集・検索します。",
         "settings" => "保存先、表示、同期方法など、この端末の設定を管理します。",
         _ => "開発環境の構築、共同開発、制作支援への入口です。"
     };
@@ -553,6 +581,88 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         {
             CollaborationStatusText = exception.Message;
         }
+    }
+
+    private bool TryGetMarkdownRepository(out string path)
+    {
+        path = SelectedLocalRepository?.Path ?? "";
+        if (string.IsNullOrWhiteSpace(path)) MarkdownStatusText = "先にローカルリポジトリを選択してください。";
+        return !string.IsNullOrWhiteSpace(path);
+    }
+
+    private async Task LoadMarkdownDocumentsAsync()
+    {
+        if (!TryGetMarkdownRepository(out var path)) return;
+        try
+        {
+            var documents = await _markdownService.ListAsync(path);
+            MarkdownDocuments.Clear();
+            foreach (var document in documents) MarkdownDocuments.Add(document);
+            MarkdownStatusText = $"Markdown {documents.Count}件。表示はソーステキストのみで、HTML/スクリプトは実行しません。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            MarkdownStatusText = exception.Message;
+        }
+    }
+
+    private async Task OpenMarkdownAsync()
+    {
+        if (!TryGetMarkdownRepository(out var path) || string.IsNullOrWhiteSpace(MarkdownRelativePath)) return;
+        try
+        {
+            var document = await _markdownService.ReadAsync(path, MarkdownRelativePath);
+            MarkdownContent = document.Content;
+            MarkdownStatusText = $"{document.RelativePath} · {document.Length:N0} bytes · ソース表示";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            MarkdownStatusText = exception.Message;
+        }
+    }
+
+    private async Task SearchMarkdownAsync()
+    {
+        if (!TryGetMarkdownRepository(out var path)) return;
+        try
+        {
+            var results = await _markdownService.SearchAsync(path, MarkdownSearchQuery);
+            MarkdownSearchResults.Clear();
+            foreach (var result in results) MarkdownSearchResults.Add(result);
+            MarkdownStatusText = $"検索結果 {results.Count}件。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            MarkdownStatusText = exception.Message;
+        }
+    }
+
+    private async Task SaveMarkdownAsync()
+    {
+        if (!TryGetMarkdownRepository(out var path) || string.IsNullOrWhiteSpace(MarkdownRelativePath)) return;
+        if (MessageBox.Show($"{SelectedLocalRepository!.DirectoryName}\n{MarkdownRelativePath}\n\nこのMarkdownをローカルへ保存します。既存内容は置き換わり、差分はGitで確認できます。続けますか？",
+                "Markdown保存の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            await _markdownService.SaveAsync(path, MarkdownRelativePath, MarkdownContent);
+            var snapshot = await _gitOperations.GetStatusAsync(path);
+            MarkdownStatusText = $"保存しました。Git状態: {snapshot.ChangedPaths.Count} changed path(s)。差分を確認してからGitHub Desktop等でstageしてください。";
+            await LoadMarkdownDocumentsAsync();
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            MarkdownStatusText = exception.Message;
+        }
+    }
+
+    private void InsertMarkdownTemplate(object? parameter)
+    {
+        try
+        {
+            MarkdownContent = _markdownService.GetTemplate(parameter as string ?? "issue");
+            MarkdownStatusText = "テンプレートを編集欄へ挿入しました。保存先を確認してください。";
+        }
+        catch (ArgumentException exception) { MarkdownStatusText = exception.Message; }
     }
 
     private async Task ScanLocalRepositoriesAsync()
