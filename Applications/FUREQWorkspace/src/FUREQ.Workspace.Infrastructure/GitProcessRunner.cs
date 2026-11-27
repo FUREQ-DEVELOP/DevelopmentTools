@@ -10,7 +10,8 @@ public sealed class GitProcessRunner : IGitProcessRunner
 
     public async Task<GitCommandResult> RunAsync(string workingDirectory, IReadOnlyList<string> arguments,
         TimeSpan timeout, CancellationToken cancellationToken = default, bool disableHooks = false,
-        bool disableFsMonitor = false, bool useGitCredentialManager = false)
+        bool disableFsMonitor = false, bool useGitCredentialManager = false,
+        bool isolateCheckoutConfiguration = false)
     {
         if (!Directory.Exists(workingDirectory)) throw new DirectoryNotFoundException("Gitの作業フォルダーがありません。");
         if (arguments.Count == 0) throw new ArgumentException("Gitの引数が必要です。", nameof(arguments));
@@ -43,10 +44,29 @@ public sealed class GitProcessRunner : IGitProcessRunner
             startInfo.ArgumentList.Add("-c");
             startInfo.ArgumentList.Add("credential.helper=manager");
         }
+        string? templateDirectory = null;
+        if (isolateCheckoutConfiguration)
+        {
+            templateDirectory = Path.Combine(Path.GetTempPath(), $"fureq-empty-template-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(templateDirectory);
+            startInfo.Environment["GIT_TEMPLATE_DIR"] = templateDirectory;
+            startInfo.Environment["GIT_CONFIG_NOSYSTEM"] = "1";
+            startInfo.Environment["GIT_CONFIG_GLOBAL"] = "NUL";
+            startInfo.Environment["GIT_LFS_SKIP_SMUDGE"] = "1";
+        }
         foreach (var argument in arguments) startInfo.ArgumentList.Add(argument);
         startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
         startInfo.Environment["GIT_OPTIONAL_LOCKS"] = "0";
 
+        try { return await RunStartedProcessAsync(startInfo, timeout, cancellationToken); }
+        finally
+        {
+            if (templateDirectory is not null && Directory.Exists(templateDirectory)) Directory.Delete(templateDirectory);
+        }
+    }
+
+    private static async Task<GitCommandResult> RunStartedProcessAsync(ProcessStartInfo startInfo, TimeSpan timeout, CancellationToken cancellationToken)
+    {
         using var process = new Process { StartInfo = startInfo };
         if (!process.Start()) throw new InvalidOperationException("Gitを起動できませんでした。");
         using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
