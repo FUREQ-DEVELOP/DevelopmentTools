@@ -37,6 +37,7 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<IWorkspaceSetupService, WorkspaceSetupService>();
                 services.AddSingleton<IMarkdownDocumentService, MarkdownDocumentService>();
                 services.AddSingleton<IWorkspaceAssetService, WorkspaceAssetService>();
+                services.AddSingleton<IWorkspaceToolService, WorkspaceToolService>();
                 var githubClient = new HttpClient
                 {
                     BaseAddress = new Uri("https://api.github.com/"),

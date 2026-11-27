@@ -56,6 +56,12 @@
 - 安全策: `.git`等の除外、reparse pointを辿らない、走査2 GiB/20,000件の上限を設ける。LFS pointerのOID/sizeを読み取るだけで画像やLFS objectをダウンロードしない。Issueに未登録ラベルを仮定しない。
 - 検証: 一時Git repositoryで画像、依存フォルダ除外、CRLF pointer解析、pointer不変を検証。
 
+## D-011: Controlled common tools
+- 状態: PHASE 12実装中
+- 決定: `Tools/`内の厳格なversion 1 JSON Manifestからツールを検出し、checkout内の`.exe`だけを毎回の確認後に起動する。現checkoutにManifestがないため、初期一覧は空。
+- 安全策: 任意shell/script非対応、unknown field/path escape/reparse point拒否、走査上限、ArgumentList、timeout/cancel、子プロセス環境の限定、出力破棄。
+- 検証: 正常/不正/unknown field/checkout外実行パスのローカルManifestテスト。実ツール起動は未実施。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。

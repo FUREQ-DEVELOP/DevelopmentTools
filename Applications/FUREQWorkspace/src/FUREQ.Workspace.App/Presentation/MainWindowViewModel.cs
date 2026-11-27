@@ -26,6 +26,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly IGitHubCollaborationService _collaborationService;
     private readonly IMarkdownDocumentService _markdownService;
     private readonly IWorkspaceAssetService _assetService;
+    private readonly IWorkspaceToolService _toolService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -62,6 +63,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _assetStatusText = "ローカルリポジトリを選択して資産一覧を読み込みます。";
     private string _assetRequestTitle = "";
     private string _assetRequestDetails = "";
+    private string _toolRootPath = "";
+    private string _toolStatusText = "DevelopmentTools checkoutを選択してManifestを確認してください。";
+    private WorkspaceTool? _selectedTool;
 
     public MainWindowViewModel(
         IRepositoryDiscovery repositoryDiscovery,
@@ -74,7 +78,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         IWorkspaceSetupService workspaceSetupService,
         IGitHubCollaborationService collaborationService,
         IMarkdownDocumentService markdownService,
-        IWorkspaceAssetService assetService)
+        IWorkspaceAssetService assetService,
+        IWorkspaceToolService toolService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
@@ -87,6 +92,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         _collaborationService = collaborationService;
         _markdownService = markdownService;
         _assetService = assetService;
+        _toolService = toolService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -121,6 +127,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         InsertMarkdownTemplateCommand = new RelayCommand(InsertMarkdownTemplate);
         LoadAssetsCommand = new AsyncRelayCommand(LoadAssetsAsync);
         CreateAssetRequestCommand = new AsyncRelayCommand(CreateAssetRequestAsync);
+        BrowseToolRootCommand = new RelayCommand(_ => BrowseToolRoot());
+        LoadToolsCommand = new AsyncRelayCommand(LoadToolsAsync);
+        RunToolCommand = new AsyncRelayCommand(RunToolAsync);
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
@@ -137,6 +146,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         MarkdownDocuments = [];
         MarkdownSearchResults = [];
         Assets = [];
+        Tools = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
@@ -144,6 +154,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
             new NavigationItem("setup", "ワークスペース", _navigateCommand),
             new NavigationItem("documents", "ドキュメント", _navigateCommand),
             new NavigationItem("assets", "資産", _navigateCommand),
+            new NavigationItem("tools", "共通ツール", _navigateCommand),
             new NavigationItem("settings", "設定", _navigateCommand)
         ];
     }
@@ -165,6 +176,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<MarkdownDocument> MarkdownDocuments { get; }
     public ObservableCollection<MarkdownSearchResult> MarkdownSearchResults { get; }
     public ObservableCollection<WorkspaceAsset> Assets { get; }
+    public ObservableCollection<WorkspaceTool> Tools { get; }
     public IReadOnlyList<WorkspaceSetupMode> SetupModes { get; }
     public IReadOnlyList<LfsDownloadMode> LfsModes { get; }
     public ICommand LoadRepositoriesCommand { get; }
@@ -200,6 +212,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand InsertMarkdownTemplateCommand { get; }
     public ICommand LoadAssetsCommand { get; }
     public ICommand CreateAssetRequestCommand { get; }
+    public ICommand BrowseToolRootCommand { get; }
+    public ICommand LoadToolsCommand { get; }
+    public ICommand RunToolCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
@@ -231,6 +246,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public string AssetStatusText { get => _assetStatusText; private set { _assetStatusText = value; OnPropertyChanged(); } }
     public string AssetRequestTitle { get => _assetRequestTitle; set { _assetRequestTitle = value; OnPropertyChanged(); } }
     public string AssetRequestDetails { get => _assetRequestDetails; set { _assetRequestDetails = value; OnPropertyChanged(); } }
+    public string ToolRootPath { get => _toolRootPath; set { _toolRootPath = value; OnPropertyChanged(); } }
+    public string ToolStatusText { get => _toolStatusText; private set { _toolStatusText = value; OnPropertyChanged(); } }
+    public WorkspaceTool? SelectedTool { get => _selectedTool; set { _selectedTool = value; OnPropertyChanged(); } }
     public string CustomRepositoryNames { get => _customRepositoryNames; set { _customRepositoryNames = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
@@ -263,6 +281,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         "setup" => "ワークスペース",
         "documents" => "ドキュメント",
         "assets" => "資産",
+        "tools" => "共通ツール",
         "settings" => "設定",
         _ => "開発ワークスペース"
     };
@@ -273,6 +292,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         "setup" => "班や職種ごとの作業プロファイルを管理し、指定フォルダー内のローカルリポジトリを確認します。",
         "documents" => "ローカルリポジトリのMarkdownを安全に閲覧・編集・検索します。",
         "assets" => "ローカル画像とGit LFS pointerの状態を確認し、資産依頼をIssueで共有します。",
+        "tools" => "登録済みManifestを検証し、許可されたDevelopmentTools内の実行ファイルだけを起動します。",
         "settings" => "保存先、表示、同期方法など、この端末の設定を管理します。",
         _ => "開発環境の構築、共同開発、制作支援への入口です。"
     };
@@ -727,6 +747,50 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or HttpRequestException or IOException or TaskCanceledException)
         {
             AssetStatusText = exception.Message;
+        }
+    }
+
+    private void BrowseToolRoot()
+    {
+        var dialog = new OpenFolderDialog { Title = "DevelopmentTools checkoutを選択", Multiselect = false };
+        if (dialog.ShowDialog() == true) ToolRootPath = dialog.FolderName;
+    }
+
+    private async Task LoadToolsAsync()
+    {
+        try
+        {
+            var tools = await _toolService.DiscoverAsync(ToolRootPath);
+            Tools.Clear();
+            foreach (var tool in tools) Tools.Add(tool);
+            SelectedTool = Tools.FirstOrDefault();
+            ToolStatusText = tools.Count == 0
+                ? "有効な共通ツールManifestはありません。未登録のツールは表示・起動しません。"
+                : $"検証済みManifest: {tools.Count}件。各起動時に内容を確認します。";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            Tools.Clear();
+            SelectedTool = null;
+            ToolStatusText = exception.Message;
+        }
+    }
+
+    private async Task RunToolAsync()
+    {
+        var tool = SelectedTool;
+        if (tool is null) return;
+        var arguments = tool.Arguments.Count == 0 ? "(なし)" : string.Join("\n", tool.Arguments);
+        if (MessageBox.Show($"{tool.DisplayName} {tool.Version}\n{tool.Description}\n\n実行ファイル: {tool.EntryPoint}\n引数:\n{arguments}\n\n副作用: {tool.SideEffectClassification}\n制限時間: {tool.TimeoutSeconds}秒\n\nこのツールを起動しますか？",
+                "共通ツールの起動確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            var result = await _toolService.RunAsync(ToolRootPath, tool);
+            ToolStatusText = $"{tool.DisplayName}: 終了コード {result.ExitCode} · {result.Duration.TotalSeconds:N1}秒";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or TimeoutException)
+        {
+            ToolStatusText = exception.Message;
         }
     }
 
