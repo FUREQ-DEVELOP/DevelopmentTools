@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 04 — IN PROGRESS (workspace profiles and local inventory implemented)
+Current: PHASE 04 — COMPLETED (PR #5 open; review pending)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -23,9 +23,8 @@ Current: PHASE 04 — IN PROGRESS (workspace profiles and local inventory implem
 - Current Release build succeeds with 0 warnings / 0 errors; all 10 tests pass.
 
 ## In progress
-- Phase 01 PR #2, Phase 02 PR #3, and Phase 03 PR #4 are open and awaiting independent review.
+- Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, and Phase 04 PR #5 are open and awaiting independent review.
 - PHASE 03 Device Flow and Windows Credential Manager persistence are not yet verified against live user authorization.
-- PHASE 04 changes are local on `feature/fureq-workspace-phase-04`; no PR has been submitted yet.
 
 ## Not started
 PHASE 05-17. Git operations, setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
@@ -38,6 +37,6 @@ PHASE 05-17. Git operations, setup workflow, CI, and release artifacts do not ex
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for Phase 01-03 PRs #2-#4; merge protections must not be bypassed.
+1. Obtain independent reviews for Phase 01-04 PRs #2-#5; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Submit the Phase 04 profile/inventory PR.
+3. Start Phase 05 Git operations using the safe process-runner and repository-identity rules.
