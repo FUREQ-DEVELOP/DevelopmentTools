@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 10 — MARKDOWN SOURCE WORKFLOW IMPLEMENTED (PR #11 preparation)
+Current: PHASE 10 — MARKDOWN SOURCE WORKFLOW IMPLEMENTED (PR #11 open)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -49,6 +49,7 @@ Current: PHASE 10 — MARKDOWN SOURCE WORKFLOW IMPLEMENTED (PR #11 preparation)
 - Phase 07 PR #8 is open and awaiting review.
 - Phase 08 PR #9 is open and awaiting review.
 - PHASE 09 PR #10 is open and awaiting review.
+- PHASE 10 PR #11 is open and awaiting review.
 - PHASE 09 trial ZIP is not a formal release; it has not been uploaded or distributed. Clean Windows user/account trial remains pending.
 - PHASE 10 markdown viewer/editor is local-only and has not been visually checked in a clean user profile; save/update behavior is covered by local filesystem and Git tests.
 - PHASE 07 LFS estimates/selection and live 14-repository pilot remain open validation items.
@@ -69,9 +70,9 @@ PHASE 11-17. Asset support, controlled tools, dependency graph and cross-team re
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for PHASE 01-09 PRs #2-#10 in dependency order; merge protections must not be bypassed.
+1. Obtain independent reviews for PHASE 01-10 PRs #2-#11 in dependency order; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Review and merge PR #2-#10 in dependency order, without bypassing branch protections.
+3. Review and merge PR #2-#11 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
 5. Review/merge PHASE 08 PR #9 after creation; verify live read access, then use only dedicated/approved targets for any live write verification.
 6. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.
