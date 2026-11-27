@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 12 — TOOL MANIFEST AND CONTROLLED LAUNCH IN PROGRESS
+Current: PHASE 12 — TOOL MANIFEST AND CONTROLLED LAUNCH IMPLEMENTED (PR #13 open)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -59,7 +59,7 @@ Current: PHASE 12 — TOOL MANIFEST AND CONTROLLED LAUNCH IN PROGRESS
 - PHASE 09 PR #10 is open and awaiting review.
 - PHASE 10 PR #11 is open and awaiting review.
 - PHASE 11 PR #12 is open and awaiting review.
-- PHASE 12 implementation is in progress; PR not yet created.
+- PHASE 12 PR #13 is open and awaiting review.
 - PHASE 09 trial ZIP is not a formal release; it has not been uploaded or distributed. Clean Windows user/account trial remains pending.
 - PHASE 10 markdown viewer/editor is local-only and has not been visually checked in a clean user profile; save/update behavior is covered by local filesystem and Git tests.
 - PHASE 11 asset inventory has not been visually checked in the WPF app; live Issue creation and LFS payload access were not exercised.
@@ -82,11 +82,12 @@ PHASE 13-17. Dependency graph and cross-team request features are not implemente
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for PHASE 01-10 PRs #2-#11 in dependency order; merge protections must not be bypassed.
+1. Obtain independent reviews for PHASE 01-12 PRs #2-#13 in dependency order; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Review and merge PR #2-#11 in dependency order, without bypassing branch protections.
+3. Review and merge PR #2-#13 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
 5. Review/merge PHASE 08 PR #9 after creation; verify live read access, then use only dedicated/approved targets for any live write verification.
 6. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.
 7. Review/merge PHASE 09 PR #10, then run the ZIP in a clean Windows user profile before treating the MVP as trial-verified.
-8. Review/merge PHASE 10 PR #11, then review/merge the Phase 11 asset/LFS status PR.
+8. Review/merge PHASE 10 PR #11, then PR #12 (assets/LFS) and #13 (tools).
+9. Implement and review PHASE 13 dependency graph and cross-team requests.
