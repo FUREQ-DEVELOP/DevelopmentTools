@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 08 — IMPLEMENTED, LIVE API VERIFICATION PENDING (PR #9 open)
+Current: PHASE 09 — TRIAL PACKAGE BUILT, CLEAN-ACCOUNT CHECK PENDING (PR #10 preparation)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -37,11 +37,16 @@ Current: PHASE 08 — IMPLEMENTED, LIVE API VERIFICATION PENDING (PR #9 open)
 - API writes require the app user token and explicit confirmation in the UI; Issue writes are not used in tests. Fake HTTP tests validate payloads, token headers, Projects GraphQL queries/mutations, malformed repository rejection, and timeout no-retry behavior.
 - Live Organization Issue/Project reads and writes have not been verified. Issue creation and Project membership updates were tested against fake HTTP only.
 - Current Release build succeeds with 0 warnings / 0 errors; all 35 tests pass.
+- PHASE 09 adds a repeatable self-contained win-x64 single-file ZIP publish script and trial manifest; generated artifact is local and gitignored.
+- Published trial executable launched on this Windows account; WPF startup and local DB initialization were observed. This is not a clean-account/clean-machine trial, and live GitHub sign-in was not performed.
+- Current Release build succeeds with 0 warnings / 0 errors; all 35 tests pass.
 
 ## In progress
 - Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, Phase 05 PR #6, and Phase 06 PR #7 are open and awaiting independent review.
 - Phase 07 PR #8 is open and awaiting review.
 - Phase 08 PR #9 is open and awaiting review.
+- PHASE 09 PR #10 is open and awaiting review.
+- PHASE 09 trial ZIP is not a formal release; it has not been uploaded or distributed. Clean Windows user/account trial remains pending.
 - PHASE 07 LFS estimates/selection and live 14-repository pilot remain open validation items.
 - PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
 - PHASE 07 Lightweight/Complete/Custom LFS modes are deliberately blocked pending payload-size estimation and path selection. Only Development mode (skip LFS) executes.
@@ -50,7 +55,7 @@ Current: PHASE 08 — IMPLEMENTED, LIVE API VERIFICATION PENDING (PR #9 open)
 - PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
 
 ## Not started
-PHASE 09-17. MVP integration, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 10-17. Markdown, asset support, controlled tools, dependency graph and cross-team request features are not implemented yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -60,9 +65,10 @@ PHASE 09-17. MVP integration, CI, and release artifacts do not exist yet. PHASE 
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Obtain independent reviews for PHASE 01-08 PRs #2-#9 in dependency order; merge protections must not be bypassed.
+1. Obtain independent reviews for PHASE 01-09 PRs #2-#10 in dependency order; merge protections must not be bypassed.
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
-3. Review and merge PR #2-#9 in dependency order, without bypassing branch protections.
+3. Review and merge PR #2-#10 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
 5. Review/merge PHASE 08 PR #9 after creation; verify live read access, then use only dedicated/approved targets for any live write verification.
 6. Finish PHASE 07 LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.
+7. Review/merge PHASE 09 PR #10, then run the ZIP in a clean Windows user profile before treating the MVP as trial-verified.

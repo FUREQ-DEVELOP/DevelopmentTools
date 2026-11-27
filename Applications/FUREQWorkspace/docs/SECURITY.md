@@ -24,6 +24,8 @@ Workspace setup writes only after an explicit plan confirmation. Clone into a pl
 
 Issues, pull requests, and Organization Projects are read with the signed-in App user token and remain constrained by GitHub's permission checks. Issue creation and adding an Issue to a Project each require explicit UI confirmation. Do not retry an API write after timeout; report uncertain outcome and ask the user to inspect GitHub first. Bound API response sizes and paginate with a fixed maximum.
 
+The PHASE 09 ZIP is a local trial artifact, not a formal release. It contains no token or private key and is not uploaded by the publish script. Run it first under a clean Windows account before wider distribution.
+
 ## Logs/database
 No tokens, authorization headers, credential output, complete private paths unless needed, or unnecessary source/issue content in logs. Local DB holds only settings, worktree inventory, cache and resumable setup state. Define bounded retention before Phase 02. Do not commit live DBs.
 

@@ -19,6 +19,7 @@
 
 ## CI
 DevelopmentTools is public. Use a small Ubuntu job for restore/build/unit checks where supported and Windows for WPF build/UI verification only as required. Minimize runs, artifacts and duration; no paid service, no LFS payload, least GITHUB_TOKEN permissions. Existing actions allowlist must be respected.
+- Trial packaging publishes the app project only as a self-contained win-x64 single-file ZIP, then verifies startup using a clean Windows account. Do not upload/distribute the trial from CI without separate approval.
 
 ## Initial automated checks
 - .NET 10 uses Microsoft Testing Platform for `dotnet test`; `global.json` selects that runner.
