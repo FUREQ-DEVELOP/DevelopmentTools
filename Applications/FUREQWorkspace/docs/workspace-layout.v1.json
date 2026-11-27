@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "organization": "FUREQ-DEVELOP",
+  "repositories": [
+    { "name": ".github", "path": "Organization/.github" },
+    { "name": ".github-private", "path": "Organization/.github-private" },
+    { "name": "DevelopmentDocs", "path": "Shared/DevelopmentDocs" },
+    { "name": "DevelopmentTools", "path": "Shared/DevelopmentTools" },
+    { "name": "RenderingLibrary", "path": "Rendering/RenderingLibrary" },
+    { "name": "RenderingWorkspace", "path": "Rendering/RenderingWorkspace" },
+    { "name": "GameEngine", "path": "Engine/GameEngine" },
+    { "name": "EngineEditor", "path": "Engine/EngineEditor" },
+    { "name": "EngineHub", "path": "Engine/EngineHub" },
+    { "name": "EngineWorkspace", "path": "Engine/EngineWorkspace" },
+    { "name": "Game-001", "path": "Games/Game-001/Game-001" },
+    { "name": "Game-001-Code", "path": "Games/Game-001/Game-001-Code" },
+    { "name": "Game-001-Art", "path": "Games/Game-001/Game-001-Art" },
+    { "name": "Game-001-Design", "path": "Games/Game-001/Game-001-Design" }
+  ]
+}
