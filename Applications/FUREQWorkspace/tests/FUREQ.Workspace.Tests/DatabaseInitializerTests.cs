@@ -27,7 +27,7 @@ public sealed class DatabaseInitializerTests
             await connection.OpenAsync(cancellationToken);
             await using var command = connection.CreateCommand();
             command.CommandText = "PRAGMA user_version;";
-            Assert.Equal(2L, await command.ExecuteScalarAsync(cancellationToken));
+            Assert.Equal(3L, await command.ExecuteScalarAsync(cancellationToken));
         }
         finally
         {
@@ -44,7 +44,7 @@ public sealed class DatabaseInitializerTests
     }
 
     [Fact]
-    public async Task Upgrades_schema_v1_to_v2_without_losing_existing_settings()
+    public async Task Upgrades_schema_v1_to_v3_without_losing_existing_settings()
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"fureq-migration-{Guid.NewGuid():N}.db");
         try
@@ -67,7 +67,7 @@ public sealed class DatabaseInitializerTests
             var settings = new SqliteAppSettingsRepository(database);
 
             Assert.Equal("dark", await settings.GetAsync("theme", TestContext.Current.CancellationToken));
-            Assert.Equal(2L, await GetSchemaVersionAsync(databasePath));
+            Assert.Equal(3L, await GetSchemaVersionAsync(databasePath));
         }
         finally
         {

@@ -6,6 +6,7 @@
 - Teams and membership require authentication and are displayed only for the signed-in user. GitHub permissions remain authoritative.
 - Issues, Projects and Pull Requests use typed request/response models and explicit read/write permissions. No Organization administration endpoints in MVP.
 - REST calls send `X-GitHub-Api-Version: 2026-03-10` and `Accept: application/vnd.github+json`; reconfirm the supported version when implementing future endpoints. GraphQL uses its current schema. Add ETags/conditional requests and rate-limit/Retry-After handling as the read surfaces expand.
+- PHASE 08 lists issues and pull requests via the REST endpoints; filter pull requests out of the REST issue list. Issue creation is an authenticated write. Organization Projects v2 and items use GraphQL; adding an Issue to a Project is a separately confirmed mutation.
 
 ## Application result
 Every async use case accepts CancellationToken and returns a typed `Result<T>` with `Success`, `Failure`, or `OutcomeUnknown`; include stable error code, safe user message, retryability and redacted diagnostic correlation ID. Do not retry a timed-out write unless idempotency/current remote state is checked.
@@ -18,6 +19,15 @@ One process runner uses ArgumentList, explicit cwd, async stdout/stderr, timeout
 
 ## Submodules
 Build the dependency graph from committed gitlinks plus a tracked, clean `.gitmodules`. Show each path, FUREQ-DEVELOP repository, pinned SHA, current SHA and initialization state. Initialization proceeds one validated level at a time, uses the recorded SHA and never uses `--remote`. LFS smudge and hooks are disabled. Existing initialized submodules at a different SHA are reported in an update preview; they are not changed by initialization.
+
+## Workspace setup
+Versioned JSON maps the 14 default repositories to relative paths. Modes compute and display a dependency closure before execution. Revalidate plan identity/path/origin at execution, clone into staging, validate default branch and remote commit, initialize only pinned submodules, then promote to a vacant target. Persist the plan and each item's status locally for resume. Limit top-level clone concurrency to three. Development LFS mode skips object downloads; other modes require a future estimate and explicit path/budget selection implementation.
+
+## Markdown documents
+Enumerate and search `.md` files beneath the selected local repository only, excluding `.git`, dependency/build directories and reparse points. Enforce 2 MiB per document, 50 MiB aggregate scan and 5,000 result/file limits. Render no HTML or executable embedded content; the initial UI displays Markdown source. Save validates a relative `.md` path, confirms the target, writes atomically, then exposes resulting Git status for diff review.
+
+## Dependency graph and cross-team requests
+Submodule edges come from committed gitlinks and are reported with their pinned/current SHA and initialization state. Declared product edges are read separately from the optional `.fureq/dependencies.json` version 1 manifest (maximum 64 KiB / 500 unique repositories); accepted kinds are `sdk`, `module`, `tool`, and `api`, with optional SDK version, API compatibility string, and FUREQ-DEVELOP GitHub Release URL. GitHub Issue requests are confirmed before creation and may include an optional related FUREQ-DEVELOP Issue URL. GitHub remains the record of truth; dependency declarations do not mutate Gitlinks or perform updates.
 
 ## File and path
 Target paths derive from approved mapping plus validated overrides. Reject path traversal, root escape, reserved Windows names and reparse-point escapes. Verify remote canonical URL/repository ID before reusing a clone.
