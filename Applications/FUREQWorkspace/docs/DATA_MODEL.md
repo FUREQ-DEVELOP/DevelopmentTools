@@ -11,6 +11,7 @@ SQLiteは端末内の操作状態/キャッシュのみ。GitHubがIssues、Proj
 - `Worktree`: id, repository id, canonical path, kind (`Standalone`/`Submodule`), parent worktree/path, pinned SHA, current branch, dirty state snapshot, last inventory time. Multiple worktrees per repository are valid.
 - `SetupSession`: id, plan hash, mode, root, status, timestamps, cancellation/resume metadata.
 - `SetupItem`: session/repository id, target path, step/status, attempt, safe error code, bytes estimate/known progress, linked worktree id.
+- `SetupPlan` / `SetupProgress` (schema v3): a versioned JSON plan and per-repository state/result, saved after each item so cancelled or interrupted setup can be reopened and resumed. Clone URLs are public HTTPS identifiers; no token or private credential is stored.
 - `ApiCache`: resource key, etag, expiry, fetched timestamp and serialized non-secret data.
 - `OperationHistory`: operation id/type, target ids, outcome and redacted diagnostics.
 

@@ -33,6 +33,12 @@
 - 安全策: hooks/LFS smudgeを無効化し、Gitのglobal/system configとテンプレートを隔離する。初期化済みモジュールのSHA差分はプレビューだけ行う。
 - 検証: nested local repositoriesによる再帰初期化とSHA差分プレビュー。組織リポジトリへの実行は未実施。
 
+## D-007: Workspace Setup execution
+- 状態: PHASE 07 implementation PR作成予定。Live 14-repository pilot未実施。
+- 決定: versioned JSONから相対パスを解決し、モード別dependency closureとSetup Planを表示する。明示確認後、最大3件を並行にstaging cloneし、origin/branch/SHAを検証してtargetへ昇格する。完了済みと各itemの状態をSQLiteへ保存し再開可能にする。
+- LFS: Development modeだけ実行可能。Lightweight/Complete/Customは見積もり/対象選択の機能が揃うまでBlockする。
+- 検証: ローカルbare reposでclone/cancel/resumeを検証。全14個の組織公開repoへの実行はしない。
+
 ## 保留
 - Visual Studio 2026/SDK updateの実行完了日は未確認。
 - GitHub App Client ID、install ID、app permission実値。

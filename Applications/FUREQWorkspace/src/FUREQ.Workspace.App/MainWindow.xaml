@@ -85,6 +85,37 @@
                         <TextBlock Text="登録済みプロファイル" FontSize="17" FontWeight="SemiBold" Margin="0,18,0,6" />
                         <ListBox ItemsSource="{Binding WorkspaceProfiles}" SelectedItem="{Binding SelectedWorkspaceProfile}"
                                  DisplayMemberPath="Name" MinHeight="60" MaxHeight="150" />
+                        <TextBlock Text="Workspace Setup" FontSize="17" FontWeight="SemiBold" Margin="0,18,0,6" />
+                        <DockPanel Margin="0,4,0,8">
+                            <TextBlock DockPanel.Dock="Left" Text="モード" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox ItemsSource="{Binding SetupModes}" SelectedItem="{Binding SelectedSetupMode}" Padding="6" />
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,8">
+                            <TextBlock DockPanel.Dock="Left" Text="LFS" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox ItemsSource="{Binding LfsModes}" SelectedItem="{Binding SelectedLfsMode}" Padding="6" />
+                        </DockPanel>
+                        <TextBox Text="{Binding CustomRepositoryNames, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Custom mode: リポジトリ名を改行またはカンマ区切りで入力" Padding="8" Margin="0,0,0,8" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Setup Planを作成" Command="{Binding CreateSetupPlanCommand}" Padding="14,8" />
+                            <Button Content="前回の計画を再開" Command="{Binding ResumeSetupPlanCommand}" Margin="8,0,0,0" Padding="14,8" />
+                            <Button Content="計画を実行" Command="{Binding ExecuteSetupPlanCommand}"
+                                    Margin="8,0,0,0" Padding="14,8" />
+                            <Button Content="キャンセル" Command="{Binding CancelSetupCommand}" IsEnabled="{Binding IsSetupRunning}"
+                                    Margin="8,0,0,0" Padding="14,8" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding SetupStatusText}" Foreground="#55636C" TextWrapping="Wrap" Margin="0,0,0,8" />
+                        <DataGrid ItemsSource="{Binding SetupItems}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  MinHeight="100" MaxHeight="260">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="状態" Binding="{Binding State}" Width="90" />
+                                <DataGridTextColumn Header="リポジトリ" Binding="{Binding FullName}" Width="2*" />
+                                <DataGridTextColumn Header="保存先" Binding="{Binding RelativePath}" Width="2*" />
+                                <DataGridTextColumn Header="依存" Binding="{Binding Dependencies.Count}" Width="60" />
+                                <DataGridTextColumn Header="メモ" Binding="{Binding Message}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
                         <Button Content="ローカルリポジトリを確認" Command="{Binding ScanLocalRepositoriesCommand}"
                                 HorizontalAlignment="Left" Padding="14,8" Margin="0,10,0,0" />
                         <TextBlock Text="{Binding RepositoryStatus}" Foreground="#55636C" Margin="0,8,0,8" />

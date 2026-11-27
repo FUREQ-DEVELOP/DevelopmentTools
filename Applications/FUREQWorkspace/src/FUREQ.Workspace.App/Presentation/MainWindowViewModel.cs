@@ -22,6 +22,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly IGitRepositoryOperations _gitOperations;
     private readonly IGitHubPullRequestService _pullRequestService;
     private readonly ISubmoduleService _submoduleService;
+    private readonly IWorkspaceSetupService _workspaceSetupService;
     private string _currentKey = "home";
     private string _repositoryStatus = "未取得";
     private string _authenticationStatus = "ゲストモード（公開情報のみ）";
@@ -38,6 +39,13 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _pullRequestTitle = "";
     private string _pullRequestBody = "";
     private string _pullRequestBase = "main";
+    private CancellationTokenSource? _setupCancellation;
+    private WorkspaceSetupPlan? _setupPlan;
+    private WorkspaceSetupMode _selectedSetupMode = WorkspaceSetupMode.Full;
+    private LfsDownloadMode _selectedLfsMode = LfsDownloadMode.Development;
+    private string _setupStatusText = "公開リポジトリを読み込んで計画を作成してください。";
+    private bool _isSetupRunning;
+    private string _customRepositoryNames = "";
 
     public MainWindowViewModel(
         IRepositoryDiscovery repositoryDiscovery,
@@ -46,7 +54,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         IWorkspaceInventory workspaceInventory,
         IGitRepositoryOperations gitOperations,
         IGitHubPullRequestService pullRequestService,
-        ISubmoduleService submoduleService)
+        ISubmoduleService submoduleService,
+        IWorkspaceSetupService workspaceSetupService)
     {
         _repositoryDiscovery = repositoryDiscovery;
         _authorization = authorization;
@@ -55,6 +64,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         _gitOperations = gitOperations;
         _pullRequestService = pullRequestService;
         _submoduleService = submoduleService;
+        _workspaceSetupService = workspaceSetupService;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
         LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
         SignInCommand = new AsyncRelayCommand(SignInAsync);
@@ -72,12 +82,19 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         CreatePullRequestCommand = new AsyncRelayCommand(CreatePullRequestAsync);
         LoadSubmodulesCommand = new AsyncRelayCommand(LoadSubmodulesAsync);
         InitializeSubmodulesCommand = new AsyncRelayCommand(InitializeSubmodulesAsync);
+        CreateSetupPlanCommand = new AsyncRelayCommand(CreateSetupPlanAsync);
+        ResumeSetupPlanCommand = new AsyncRelayCommand(ResumeSetupPlanAsync);
+        ExecuteSetupPlanCommand = new AsyncRelayCommand(ExecuteSetupPlanAsync);
+        CancelSetupCommand = new RelayCommand(_ => _setupCancellation?.Cancel());
         Repositories = [];
         Teams = [];
         WorkspaceProfiles = [];
         LocalRepositories = [];
         GitChangedPaths = [];
         Submodules = [];
+        SetupModes = Enum.GetValues<WorkspaceSetupMode>();
+        LfsModes = Enum.GetValues<LfsDownloadMode>();
+        SetupItems = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
@@ -96,6 +113,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ObservableCollection<LocalRepositoryLocation> LocalRepositories { get; }
     public ObservableCollection<string> GitChangedPaths { get; }
     public ObservableCollection<SubmoduleGraphEntry> Submodules { get; }
+    public ObservableCollection<WorkspaceSetupItem> SetupItems { get; }
+    public IReadOnlyList<WorkspaceSetupMode> SetupModes { get; }
+    public IReadOnlyList<LfsDownloadMode> LfsModes { get; }
     public ICommand LoadRepositoriesCommand { get; }
     public ICommand SignInCommand { get; }
     public ICommand SignOutCommand { get; }
@@ -112,6 +132,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public ICommand CreatePullRequestCommand { get; }
     public ICommand LoadSubmodulesCommand { get; }
     public ICommand InitializeSubmodulesCommand { get; }
+    public ICommand CreateSetupPlanCommand { get; }
+    public ICommand ResumeSetupPlanCommand { get; }
+    public ICommand ExecuteSetupPlanCommand { get; }
+    public ICommand CancelSetupCommand { get; }
     public string WorkspaceName { get => _workspaceName; set { _workspaceName = value; OnPropertyChanged(); } }
     public string WorkspaceRole { get => _workspaceRole; set { _workspaceRole = value; OnPropertyChanged(); } }
     public string WorkspaceRootPath { get => _workspaceRootPath; set { _workspaceRootPath = value; OnPropertyChanged(); } }
@@ -125,6 +149,12 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public string PullRequestBase { get => _pullRequestBase; set { _pullRequestBase = value; OnPropertyChanged(); } }
     private string _submoduleStatusText = "未確認";
     public string SubmoduleStatusText { get => _submoduleStatusText; private set { _submoduleStatusText = value; OnPropertyChanged(); } }
+    public WorkspaceSetupMode SelectedSetupMode { get => _selectedSetupMode; set { _selectedSetupMode = value; OnPropertyChanged(); } }
+    public LfsDownloadMode SelectedLfsMode { get => _selectedLfsMode; set { _selectedLfsMode = value; OnPropertyChanged(); } }
+    public WorkspaceSetupPlan? SetupPlan { get => _setupPlan; private set { _setupPlan = value; OnPropertyChanged(); } }
+    public string SetupStatusText { get => _setupStatusText; private set { _setupStatusText = value; OnPropertyChanged(); } }
+    public bool IsSetupRunning { get => _isSetupRunning; private set { _isSetupRunning = value; OnPropertyChanged(); } }
+    public string CustomRepositoryNames { get => _customRepositoryNames; set { _customRepositoryNames = value; OnPropertyChanged(); } }
     public WorkspaceProfile? SelectedWorkspaceProfile
     {
         get => _selectedWorkspaceProfile;
@@ -288,6 +318,100 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         {
             RepositoryStatus = exception.Message;
         }
+    }
+
+    private async Task CreateSetupPlanAsync()
+    {
+        if (SelectedWorkspaceProfile is null)
+        {
+            SetupStatusText = "先にワークスペースプロファイルを作成・選択してください。";
+            return;
+        }
+        try
+        {
+            if (Repositories.Count == 0)
+            {
+                SetupStatusText = "公開リポジトリを取得中…";
+                foreach (var repository in await _repositoryDiscovery.GetRepositoriesAsync()) Repositories.Add(repository);
+            }
+            var custom = CustomRepositoryNames.Split(['\r', '\n', ',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            SetupPlan = await _workspaceSetupService.CreatePlanAsync(SelectedWorkspaceProfile, SelectedSetupMode,
+                Repositories.ToArray(), SelectedLfsMode, custom);
+            ShowSetupPlan(SetupPlan);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or HttpRequestException)
+        {
+            SetupStatusText = exception.Message;
+        }
+    }
+
+    private async Task ResumeSetupPlanAsync()
+    {
+        if (SelectedWorkspaceProfile is null)
+        {
+            SetupStatusText = "先にワークスペースプロファイルを選択してください。";
+            return;
+        }
+        try
+        {
+            SetupPlan = await _workspaceSetupService.GetLatestPlanAsync(SelectedWorkspaceProfile.Id);
+            if (SetupPlan is null) SetupStatusText = "再開できるSetup Planはありません。";
+            else ShowSetupPlan(SetupPlan);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or IOException)
+        {
+            SetupStatusText = exception.Message;
+        }
+    }
+
+    private async Task ExecuteSetupPlanAsync()
+    {
+        var plan = SetupPlan;
+        if (plan is null) return;
+        if (plan.Blockers.Count > 0 && plan.CloneItems.Count == 0)
+        {
+            SetupStatusText = "実行できる項目がありません。ブロッカーを解消してください。";
+            return;
+        }
+        var names = string.Join(Environment.NewLine, plan.CloneItems.Select(item => $"• {item.FullName} → {item.RelativePath}"));
+        var blockedNote = plan.Blockers.Count == 0 ? "" : $"{Environment.NewLine}{Environment.NewLine}ブロッカー {plan.Blockers.Count} 件はスキップします。";
+        if (MessageBox.Show($"最大3件ずつ、以下の公開リポジトリをCloneします。hooksとLFS自動取得は無効です。{Environment.NewLine}{Environment.NewLine}{names}{blockedNote}{Environment.NewLine}{Environment.NewLine}続けますか？",
+                "Workspace Setupの確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+
+        using var cancellation = new CancellationTokenSource();
+        _setupCancellation = cancellation;
+        IsSetupRunning = true;
+        try
+        {
+            var progress = new Progress<SetupItemProgress>(entry =>
+            {
+                SetupStatusText = $"{entry.FullName}: {entry.State} · {entry.Message}";
+                var current = SetupItems.FirstOrDefault(item => string.Equals(item.FullName, entry.FullName, StringComparison.OrdinalIgnoreCase));
+                if (current is not null)
+                {
+                    var index = SetupItems.IndexOf(current);
+                    SetupItems[index] = current with { State = entry.State, Message = entry.Message };
+                }
+            });
+            SetupPlan = await _workspaceSetupService.ExecuteAsync(plan, progress, cancellation.Token);
+            ShowSetupPlan(SetupPlan);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException or OperationCanceledException)
+        {
+            SetupStatusText = exception.Message;
+        }
+        finally
+        {
+            _setupCancellation = null;
+            IsSetupRunning = false;
+        }
+    }
+
+    private void ShowSetupPlan(WorkspaceSetupPlan plan)
+    {
+        SetupItems.Clear();
+        foreach (var item in plan.Items) SetupItems.Add(item);
+        SetupStatusText = $"{plan.Mode} · {plan.Items.Count}件 · Clone {plan.CloneItems.Count}件 · 再利用 {plan.Items.Count(item => item.State == SetupItemState.Reuse)}件 · ブロッカー {plan.Blockers.Count}件 · LFS {plan.LfsMode}";
     }
 
     private async Task ScanLocalRepositoriesAsync()

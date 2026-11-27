@@ -20,6 +20,8 @@ Use ArgumentList, no shell interpolation, HTTPS URL allowlist for `github.com/FU
 
 Submodule graph reads committed gitlinks and requires `.gitmodules` to be tracked and clean. Validate every URL and path before initialization, then initialize one level at a time so nested URLs are checked before deeper clones. Verify existing local submodule URL overrides against the allowlist, use only recorded gitlink SHAs, and never run `--remote`. Disable hooks/LFS smudge, isolate global/system Git configuration and use an empty template directory. Existing initialized modules are not moved to a different SHA by initialization; mismatches appear as a preview. Non-empty non-repository targets, reparse-point escapes, cycles, malformed graphs, and excessive depth/count are rejected.
 
+Workspace setup writes only after an explicit plan confirmation. Clone into a plan-specific staging sibling, validate origin/default-branch commit, recursively validate pinned submodules, then move to the target only if it remains vacant. Use at most three parallel top-level clones. Never overwrite non-empty targets; retain successful repositories and per-item progress on cancellation. Development mode skips LFS downloads. Other LFS modes remain blocked until estimate and path-selection checks are implemented.
+
 ## Logs/database
 No tokens, authorization headers, credential output, complete private paths unless needed, or unnecessary source/issue content in logs. Local DB holds only settings, worktree inventory, cache and resumable setup state. Define bounded retention before Phase 02. Do not commit live DBs.
 

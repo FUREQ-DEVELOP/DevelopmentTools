@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 06 — IMPLEMENTED (PR #7 preparation)
+Current: PHASE 07 — IMPLEMENTED WITH OPEN ITEMS (PR #8 preparation)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -29,15 +29,21 @@ Current: PHASE 06 — IMPLEMENTED (PR #7 preparation)
 - Recursive initialization is user-confirmed, proceeds one validated level at a time, restricts remotes to FUREQ-DEVELOP HTTPS, uses the committed gitlink SHA, disables hooks and LFS smudge, isolates global/system Git config and templates, and skips already initialized modules.
 - PHASE 06 nested local graph test covers recursive initialization, pinned SHA equality, and update preview for a mismatched checkout.
 - Current Release build succeeds with 0 warnings / 0 errors; all 24 tests pass.
+- PHASE 07 adds the versioned 14-repository layout JSON, Full/Rendering/Engine/Game/Shared/Role-based/Custom dependency closure, a read-only Setup Plan, bounded three-worker staged clones, origin/branch/SHA validation, pinned recursive submodule initialization, and final target promotion.
+- Schema v3 persists plans and item-level status. Cancellation leaves completed targets intact; the latest saved plan can be reopened and unfinished items retried.
+- PHASE 07 local tests cover the 14-target map, dependency closure, local clone execution, cancellation/resume, and SQLite persistence.
+- Current Release build succeeds with 0 warnings / 0 errors; all 27 tests pass.
 
 ## In progress
 - Phase 01 PR #2, Phase 02 PR #3, Phase 03 PR #4, Phase 04 PR #5, Phase 05 PR #6, and Phase 06 PR #7 are open and awaiting independent review.
 - PHASE 06 submodule operations were tested only with nested local repositories; no organization repository was initialized or updated.
+- PHASE 07 Lightweight/Complete/Custom LFS modes are deliberately blocked pending payload-size estimation and path selection. Only Development mode (skip LFS) executes.
+- The live clean-clone check for all 14 public repositories and team pilot have not run; no organization repositories were cloned by this change.
 - PHASE 03 Device Flow and Windows Credential Manager persistence are not yet verified against live user authorization.
 - PHASE 05 GitHub push and PR creation were not exercised against the live organization; only local Git and fake-HTTP tests ran.
 
 ## Not started
-PHASE 07-17. Setup workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
+PHASE 08-17. Issues/Projects workflow, CI, and release artifacts do not exist yet. PHASE 03 live sign-in and authenticated data verification remain incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -51,4 +57,4 @@ PHASE 07-17. Setup workflow, CI, and release artifacts do not exist yet. PHASE 0
 2. Verify Phase 03 Device Flow and authenticated team/repository discovery in the live app.
 3. Review and merge PR #2-#7 in dependency order, without bypassing branch protections.
 4. Verify PHASE 03 live sign-in and, after review/merge, exercise PHASE 05 writes only through the app's confirmation flow.
-5. Review/merge PHASE 06 PR #7 after creation, then start PHASE 07 setup workflow.
+5. Review/merge PHASE 07 PR #8 after creation; finish LFS size/selection support and the 14-repository pilot before treating PHASE 07 as complete.

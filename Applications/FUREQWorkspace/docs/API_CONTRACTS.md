@@ -19,5 +19,8 @@ One process runner uses ArgumentList, explicit cwd, async stdout/stderr, timeout
 ## Submodules
 Build the dependency graph from committed gitlinks plus a tracked, clean `.gitmodules`. Show each path, FUREQ-DEVELOP repository, pinned SHA, current SHA and initialization state. Initialization proceeds one validated level at a time, uses the recorded SHA and never uses `--remote`. LFS smudge and hooks are disabled. Existing initialized submodules at a different SHA are reported in an update preview; they are not changed by initialization.
 
+## Workspace setup
+Versioned JSON maps the 14 default repositories to relative paths. Modes compute and display a dependency closure before execution. Revalidate plan identity/path/origin at execution, clone into staging, validate default branch and remote commit, initialize only pinned submodules, then promote to a vacant target. Persist the plan and each item's status locally for resume. Limit top-level clone concurrency to three. Development LFS mode skips object downloads; other modes require a future estimate and explicit path/budget selection implementation.
+
 ## File and path
 Target paths derive from approved mapping plus validated overrides. Reject path traversal, root escape, reserved Windows names and reparse-point escapes. Verify remote canonical URL/repository ID before reusing a clone.
