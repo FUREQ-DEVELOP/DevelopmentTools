@@ -4,7 +4,7 @@ FUREQ-DEVELOP向けのWindows共同開発ポータルです。GitHub、Git、Sub
 
 開発は [要件](docs/REQUIREMENTS.md)、[設計](docs/ARCHITECTURE.md)、[進捗](docs/DEVELOPMENT_STATUS.md)から始めます。
 
-現在はPHASE 02の初期実装です。WPFホスト、画面ナビゲーション、SQLiteスキーマv1を実装しています。GitHub認証、Organization API、リポジトリ操作は未実装です。
+PHASE 03を実装中です。WPFホスト、SQLiteスキーマv1に加え、ゲストモードでOrganizationの公開リポジトリ一覧をページング取得して表示できます。GitHub Appによるユーザー認証、チーム情報、認証が必要なリポジトリ情報は未実装です。
 
 ## 開発
 

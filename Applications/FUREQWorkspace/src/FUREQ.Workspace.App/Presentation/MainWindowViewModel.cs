@@ -2,17 +2,25 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using System.Net.Http;
+using FUREQ.Workspace.Application;
+using FUREQ.Workspace.Domain;
 
 namespace FUREQ.Workspace.App.Presentation;
 
 public sealed class MainWindowViewModel : INotifyPropertyChanged
 {
     private readonly RelayCommand _navigateCommand;
+    private readonly IRepositoryDiscovery _repositoryDiscovery;
     private string _currentKey = "home";
+    private string _repositoryStatus = "未取得";
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(IRepositoryDiscovery repositoryDiscovery)
     {
+        _repositoryDiscovery = repositoryDiscovery;
         _navigateCommand = new RelayCommand(parameter => Navigate(parameter as string));
+        LoadRepositoriesCommand = new AsyncRelayCommand(LoadRepositoriesAsync);
+        Repositories = [];
         NavigationItems =
         [
             new NavigationItem("home", "ホーム", _navigateCommand),
@@ -25,6 +33,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<NavigationItem> NavigationItems { get; }
+    public ObservableCollection<RepositoryMetadata> Repositories { get; }
+    public ICommand LoadRepositoriesCommand { get; }
+    public string CurrentKey => _currentKey;
+    public string RepositoryStatus { get => _repositoryStatus; private set { _repositoryStatus = value; OnPropertyChanged(); } }
 
     public string DatabaseStatus => "ローカル設定データベースを初期化しました。認証情報は保存していません。";
 
@@ -52,12 +64,60 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         }
 
         _currentKey = key;
+        OnPropertyChanged(nameof(CurrentKey));
         OnPropertyChanged(nameof(CurrentTitle));
         OnPropertyChanged(nameof(CurrentDescription));
     }
 
+    private async Task LoadRepositoriesAsync()
+    {
+        RepositoryStatus = "GitHubから公開リポジトリを取得中…";
+        try
+        {
+            var repositories = await _repositoryDiscovery.GetPublicRepositoriesAsync();
+            Repositories.Clear();
+            foreach (var repository in repositories)
+            {
+                Repositories.Add(repository);
+            }
+
+            RepositoryStatus = $"{Repositories.Count} 件の公開リポジトリを取得しました。";
+        }
+        catch (HttpRequestException)
+        {
+            RepositoryStatus = "GitHub APIに接続できませんでした。ネットワークを確認して再試行してください。";
+        }
+        catch (TaskCanceledException)
+        {
+            RepositoryStatus = "取得がタイムアウトしました。再試行してください。";
+        }
+        catch (Exception)
+        {
+            RepositoryStatus = "リポジトリを取得できませんでした。時間をおいて再試行してください。";
+        }
+    }
+
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public sealed class AsyncRelayCommand(Func<Task> execute) : ICommand
+{
+    private bool _isExecuting;
+    public event EventHandler? CanExecuteChanged;
+    public bool CanExecute(object? parameter) => !_isExecuting;
+    public async void Execute(object? parameter)
+    {
+        if (_isExecuting) return;
+        _isExecuting = true;
+        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        try { await execute(); }
+        finally
+        {
+            _isExecuting = false;
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 }
 
 public sealed record NavigationItem(string Key, string Title, ICommand NavigateCommand);

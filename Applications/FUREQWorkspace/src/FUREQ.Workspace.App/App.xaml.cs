@@ -4,6 +4,7 @@ using FUREQ.Workspace.App.Presentation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
 using System.Windows;
 
 namespace FUREQ.Workspace.App;
@@ -27,6 +28,14 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<WorkspaceDatabase>();
                 services.AddSingleton<DatabaseInitializer>();
                 services.AddSingleton<IAppSettingsRepository, SqliteAppSettingsRepository>();
+                var githubClient = new HttpClient
+                {
+                    BaseAddress = new Uri("https://api.github.com/"),
+                    Timeout = TimeSpan.FromSeconds(30)
+                };
+                githubClient.DefaultRequestHeaders.UserAgent.ParseAdd("FUREQ-Workspace/0.1");
+                services.AddSingleton(githubClient);
+                services.AddSingleton<IRepositoryDiscovery, GitHubPublicRepositoryDiscovery>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })

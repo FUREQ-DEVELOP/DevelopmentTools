@@ -1,7 +1,7 @@
 # Development status
 
 Updated: 2026-11-27 (JST)
-Current: PHASE 02 — COMPLETED (local; PR review pending)
+Current: PHASE 03 — IN PROGRESS (public repository discovery implemented)
 
 ## Completed
 - PHASE 00: Read-only repository/org/plan/access/submodule/project/actions/billing/environment survey.
@@ -13,13 +13,15 @@ Current: PHASE 02 — COMPLETED (local; PR review pending)
 - PHASE 02 Release build succeeded with 0 warnings / 0 errors.
 - PHASE 02 test: SQLite migration idempotency and settings round-trip passed (1/1).
 - PHASE 02 WPF GUI started; home screen, DB initialization message and navigation to Repositories were observed.
+- PHASE 03 public guest discovery implemented against GitHub REST; results are paginated and displayed read-only.
+- PHASE 03 pagination test passes using a fake HTTP handler; a real unauthenticated request returned 15 public organization repositories.
 
 ## In progress
-- Submit the Phase 02 PR stacked on Phase 01 PR #2 and obtain independent review.
-- Start PHASE 03 user authorization and read-only organization discovery after Phase 02 review.
+- Phase 01 PR #2 and Phase 02 PR #3 are open and awaiting independent review.
+- Complete PHASE 03 GitHub App Device Flow, secure token storage, and authenticated team/repository discovery.
 
 ## Not started
-PHASE 03-17. No auth/API integration, setup workflow, CI, or release artifact exists yet.
+PHASE 04-17. Workspace profiles, Git operations, setup workflow, CI, and release artifacts do not exist yet. PHASE 03 authentication/team discovery remains incomplete.
 
 ## Environment constraints
 - Current install: VS2026 18.12.1, .NET SDK 10.0.404 and runtime 10.0.15. A .NET 11 SDK/runtime is also present in the machine installation; `global.json` pins the project to .NET 10.
@@ -29,6 +31,5 @@ PHASE 03-17. No auth/API integration, setup workflow, CI, or release artifact ex
 - No LFS payload, public Issue, GitHub Release or paid resource created.
 
 ## Next
-1. Finish Phase 02 build/tests and GUI startup check.
-2. Obtain independent review for Phase 01 PR #2; merge remains protected and must not be bypassed.
-3. Complete Phase 03 user authorization and read-only organization discovery.
+1. Obtain independent reviews for Phase 01 PR #2 and Phase 02 PR #3; merge protections must not be bypassed.
+2. Complete Phase 03 Device Flow and authenticated team/repository discovery; keep tokens out of SQLite and logs.
